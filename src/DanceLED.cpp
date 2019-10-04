@@ -12,10 +12,9 @@
 
 // LED LIGHTING SETUP
 #define LED_PIN     6
-#define NUM_LEDS    150
-#define BRIGHTNESS  10
+#define NUM_LEDS    300
+#define BRIGHTNESS  64
 #define LED_TYPE    NEOPIXEL
-#define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
@@ -30,6 +29,19 @@ int right[7];
 int band;
 int audio_input = 0;
 int freq = 0;
+
+// Channel indexes
+int base_start = 0;
+int base_stop = 1;
+
+int mid_start = 2;
+int mid_stop = 4;
+
+int trebble_start = 5;
+int trebble_stop = 6;
+
+// Channels
+long base_react = 0;
 
 // STANDARD VISUALIZER VARIABLES
 int midway = NUM_LEDS / 2; // CENTER MARK FROM DOUBLE LEVEL VISUALIZER
@@ -115,25 +127,6 @@ void singleRainbow()
   FastLED.show(); 
 }
 
-// FUNCTION TO MIRRORED VISUALIZER
-void doubleRainbow()
-{
-  for(int i = NUM_LEDS - 1; i >= midway; i--) {
-    if (i < react + midway) {
-      //Serial.print(i);
-      //Serial.print(" -> ");
-      leds[i] = Scroll((i * 256 / 50 + k) % 256);
-      //Serial.print(i);
-      //Serial.print(" -> ");
-      leds[(midway - i) + midway] = Scroll((i * 256 / 50 + k) % 256);
-    }
-    else
-      leds[i] = CRGB(0, 0, 0);
-      leds[midway - react] = CRGB(0, 0, 0);
-  }
-  FastLED.show();
-}
-
 void readMSGEQ7()
 // Function to read 7 band equalizers
 {
@@ -169,25 +162,6 @@ void convertSingle()
   }
 }
 
-void convertDouble()
-{
-  if (left[freq] > right[freq])
-    audio_input = left[freq];
-  else
-    audio_input = right[freq];
-
-  if (audio_input > 80)
-  {
-    pre_react = ((long)midway * (long)audio_input) / 1023L; // TRANSLATE AUDIO LEVEL TO NUMBER OF LEDs
-
-    if (pre_react > react) // ONLY ADJUST LEVEL OF LED IF LEVEL HIGHER THAN CURRENT LEVEL
-      react = pre_react;
-
-    Serial.print(audio_input);
-    Serial.print(" -> ");
-    Serial.println(pre_react);
-  }
-}
 
 // FUNCTION TO VISUALIZE WITH A SINGLE LEVEL
 void singleLevel()
@@ -212,32 +186,15 @@ void singleLevel()
   }
 }
 
-// FUNCTION TO VISUALIZE WITH MIRRORED LEVELS
-void doubleLevel()
+
+void danceFloor()
 {
   readMSGEQ7();
 
-  convertDouble();
 
-  doubleRainbow();
-
-  k = k - wheel_speed; // SPEED OF COLOR WHEEL
-  if (k < 0) // RESET COLOR WHEEL
-    k = 255;
-
-  // REMOVE LEDs
-  decay_check++;
-  if (decay_check > decay)
-  {
-    decay_check = 0;
-    if (react > 0)
-      react--;
-  }
 }
 
 void loop()
 {  
-  //singleLevel();
-  doubleLevel();
-  //delay(1);
+  singleLevel();
 }
