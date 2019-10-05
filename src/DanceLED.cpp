@@ -17,7 +17,7 @@
 #define BRIGHTNESS          64
 #define LED_TYPE            NEOPIXEL
 #define MIN_FREQ            80          // Min value to ignore 
-#define AMP_AMT             30
+#define AMP_AMT             0
 CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
@@ -77,6 +77,73 @@ long post_react = 0; // OLD SPIKE CONVERSION
 // RAINBOW WAVE SETTINGS
 int wheel_speed = 2;
 
+// DIVIDE AND CONQUER PARAMETERS
+#define NUM_SLICES 4
+#define numBreakIndecies 12
+int breakIndecies[numBreakIndecies] = {
+  0,
+  2,
+  5,
+  8,
+  
+  11,
+  15,
+  19,
+  24,
+
+  29,
+  35,
+  41,
+  48,
+};
+int layers[NUM_SLICES][8][2]; // Declaration of 3d layer array
+int ringsInSlice[NUM_SLICES];
+float layerActivationForSection[NUM_SLICES];
+CRGB colorForSection = {
+  CRGB::Red,
+  CRGB::Blue,
+  CRGB::Yellow,
+  CRGB::Blue,
+};
+
+void calculateLayers()
+{
+
+  int ring;
+  int section;
+
+  int i;
+  for (i = 0; i < numBreakIndecies - 1; i++)
+  {
+
+    int sectionMinLED = breakIndecies[i];
+    int sectionMaxLED = breakIndecies[i + 1] - 1;
+
+    ring    = i / NUM_SLICES;
+    section = i % NUM_SLICES;
+
+    ringsInSlice[section] = ring;
+
+    layers[section][ring][0] = sectionMinLED;
+    layers[section][ring][1] = sectionMaxLED; 
+
+  }
+
+  ring = i / NUM_SLICES;
+  section = i % NUM_SLICES;
+
+  ringsInSlice[section] = ring;
+
+  layers[section][ring][0] = breakIndecies[numBreakIndecies - 1];
+  layers[section][ring][0] = NUM_LEDS; 
+
+  for (int i = 0; i < NUM_SLICES; i++)
+  {
+    layerActivationForSection[i] = 1.0 / ringsInSlice[i];
+  }
+
+}
+
 void setup()
 {
   // SPECTRUM SETUP
@@ -100,6 +167,7 @@ void setup()
   // SERIAL AND INPUT SETUP
   Serial.begin(115200);
   Serial.println("\nListening...");
+  
 }
 
 // FUNCTION TO GENERATE COLOR bassD ON VIRTUAL WHEEL
@@ -187,23 +255,25 @@ void calcBassReact()
   {
     bass_input += max[i];
   }
-  Serial.print("Bass input: ");
+  Serial.print("bass input: ");
   Serial.println(bass_input);
 
   if(bass_input > MIN_FREQ)
   {
     // Get num of leds for bass
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
-    long bass_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)bass_input)/  1023L;
-    bass_pre_react /= (bass_stop - bass_start + 1);
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
+    long max_bass_freq = 1023L * (long)(bass_stop - bass_start + 1);
+    float bass_pre_react = bass_input / max_bass_freq;
 
+    Serial.print("bass max: ");
+    Serial.println(max_bass_freq);
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
     if(bass_pre_react + AMP_AMT > bass_react)
       bass_react = bass_pre_react + AMP_AMT;
 
-    Serial.print("Bass: ");
+    Serial.print("bass %: ");
     Serial.println(bass_pre_react);
   }
 }
@@ -220,21 +290,25 @@ void calcMidReact()
   {
     mid_input += max[i];
   }
+  Serial.print("mid input: ");
+  Serial.println(mid_input);
 
   if(mid_input > MIN_FREQ)
   {
     // Get num of leds for mid
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
-    long mid_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)mid_input)/ 1023L;
-    mid_pre_react /= (mid_stop - mid_start + 1);
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
+    long max_mid_freq = 1023L * (long)(mid_stop - mid_start + 1);
+    float mid_pre_react = mid_input / max_mid_freq;
 
+    Serial.print("mid max: ");
+    Serial.println(max_mid_freq);
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
     if(mid_pre_react + AMP_AMT > mid_react)
       mid_react = mid_pre_react + AMP_AMT;
 
-    Serial.print("mid: ");
+    Serial.print("mid %: ");
     Serial.println(mid_pre_react);
   }
 }
@@ -250,21 +324,25 @@ void calcTrebReact()
   {
     treb_input += max[i];
   }
+  Serial.print("treb input: ");
+  Serial.println(treb_input);
 
   if(treb_input > MIN_FREQ)
   {
     // Get num of leds for treb
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
-    long treb_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)treb_input)/ 1023L;
-    treb_pre_react /= (treb_stop - treb_start + 1);
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
+    long max_treb_freq = 1023L * (long)(treb_stop - treb_start + 1);
+    float treb_pre_react = treb_input / max_treb_freq;
 
+    Serial.print("treb max: ");
+    Serial.println(max_treb_freq);
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
     if(treb_pre_react + AMP_AMT > treb_react)
       treb_react = treb_pre_react + AMP_AMT;
 
-    Serial.print("treb: ");
+    Serial.print("treb %: ");
     Serial.println(treb_pre_react);
   }
 }
@@ -347,7 +425,108 @@ void danceFloor()
   decayChannels();
 }
 
+void setDivide()
+{
+
+  float inputForSection[] = 
+  {
+    mid_react,
+    bass_react,
+    treb_react,
+    bass_react,
+  };
+
+  // Set all LEDS as off
+  for (int i = 0; i < NUM_LEDS; i++)
+  {
+    leds[i] = CRGB(0, 0, 0);
+  }
+
+  // For every slice of the circle,
+  for (int i = 0; i < NUM_SLICES; i++)
+  {
+
+    // Figure out how many layers we need to activate in the slice
+    int numLayersToActivate = int((ringsInSlice[i] * inputForSection[i]) + 1);
+
+    // Squeeze number to the rings in slice in case i fucked up the math
+    if (numLayersToActivate > ringsInSlice[i])
+    {
+      numLayersToActivate = ringsInSlice[i];
+    }
+
+    // For each ring to be activated,
+    for (int ring = 0; ring < numLayersToActivate; ring++)
+    {
+
+      // For each pixel in that ring
+      for (int pixel = layers[i][ring][0]; pixel <= layers[i][ring][1]; pixel++)
+      {
+
+        int actualPixel = NUM_LEDS - pixel;
+
+        // light that fucker up
+        leds[actualPixel] = colorForSection[i];        
+
+      }
+
+    }
+
+  }
+
+  return;
+
+}
+
+void divideAndConquer()
+{
+
+  // Read our audio input
+  readMSGEQ7();
+
+  calcBassReact();
+  calcMidReact();
+  calcTrebReact();
+
+  // Run algo
+  setDivide();
+
+  // Decay everything over time
+  decayChannels();
+
+}
+
+void pushAlong()
+{
+
+  // Read input dickhead
+  readMSGEQ7();
+
+  calcBassReact();
+  calcMidReact();
+  calcTrebReact();
+
+  //RUN ALGO FUCK METHOD'S I'M GOING IN RAW
+  int red = mid_react * 255;
+  int green = treb_react * 255;
+  int blue = bass_react * 255;
+
+  CRGB newColor(red, green, blue);
+  
+  for (int i = NUM_LEDS - 1; i > 0; i--)
+  {
+
+    leds[i] = leds[i - 1];
+
+  }
+
+  leds[NUM_LEDS - 1] = newColor;
+
+  FastLED.show();
+
+}
+
 void loop()
 {  
-  danceFloor();
+  pushAlong();
 }
