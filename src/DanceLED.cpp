@@ -17,6 +17,7 @@
 #define BRIGHTNESS          64
 #define LED_TYPE            NEOPIXEL
 #define MIN_FREQ            80          // Min value to ignore 
+#define AMP_AMT             30
 CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
@@ -199,8 +200,8 @@ void calcBassReact()
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(bass_pre_react > bass_react)
-      bass_react = bass_pre_react;
+    if(bass_pre_react + AMP_AMT > bass_react)
+      bass_react = bass_pre_react + AMP_AMT;
 
     Serial.print("Bass: ");
     Serial.println(bass_pre_react);
@@ -230,8 +231,8 @@ void calcMidReact()
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(mid_pre_react > mid_react)
-      mid_react = mid_pre_react;
+    if(mid_pre_react + AMP_AMT > mid_react)
+      mid_react = mid_pre_react + AMP_AMT;
 
     Serial.print("mid: ");
     Serial.println(mid_pre_react);
@@ -260,8 +261,8 @@ void calcTrebReact()
 
     // Only react if we're greater than previous. 
     // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(treb_pre_react > treb_react)
-      treb_react = treb_pre_react;
+    if(treb_pre_react + AMP_AMT > treb_react)
+      treb_react = treb_pre_react + AMP_AMT;
 
     Serial.print("treb: ");
     Serial.println(treb_pre_react);
