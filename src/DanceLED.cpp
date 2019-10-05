@@ -11,10 +11,12 @@
 // This code uses the Sparkfun Spectrum Shield
 
 // LED LIGHTING SETUP
-#define LED_PIN     6
-#define NUM_LEDS    300
-#define BRIGHTNESS  64
-#define LED_TYPE    NEOPIXEL
+#define LED_PIN             6
+#define NUM_LEDS            300
+#define NUM_LEDS_PER_CHNL   NUM_LEDS/3
+#define BRIGHTNESS          64
+#define LED_TYPE            NEOPIXEL
+#define MIN_FREQ            80          // Min value to ignore 
 CRGB leds[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
@@ -26,22 +28,40 @@ int audio1 = A0;
 int audio2 = A1;
 int left[7];
 int right[7];
+long max[7]; // max of left and right channels
 int band;
 int audio_input = 0;
 int freq = 0;
 
 // Channel indexes
-int base_start = 0;
-int base_stop = 1;
+int bass_start = 0;
+int bass_stop = 1;
 
 int mid_start = 2;
 int mid_stop = 4;
 
-int trebble_start = 5;
-int trebble_stop = 6;
+int treb_start = 5;
+int treb_stop = 6;
 
-// Channels
-long base_react = 0;
+// Channel Reactions
+long bass_react = 0;
+long mid_react = 0;
+long treb_react = 0;
+
+// Channel LEDs start/stop points
+int bass_led_start = 0;
+int bass_led_stop = bass_led_start + NUM_LEDS_PER_CHNL - 1;
+
+int mid_led_start = bass_led_stop + 1;
+int mid_led_stop = mid_led_start + NUM_LEDS_PER_CHNL - 1;
+
+int treb_led_start = mid_led_stop + 1;
+int treb_led_stop = treb_led_start + NUM_LEDS_PER_CHNL - 1;
+
+// Channel Starting Colors
+CRGB bass_color = CRGB::Red;
+CRGB mid_color = CRGB::Green;
+CRGB treb_color = CRGB::Blue;
 
 // STANDARD VISUALIZER VARIABLES
 int midway = NUM_LEDS / 2; // CENTER MARK FROM DOUBLE LEVEL VISUALIZER
@@ -81,7 +101,7 @@ void setup()
   Serial.println("\nListening...");
 }
 
-// FUNCTION TO GENERATE COLOR BASED ON VIRTUAL WHEEL
+// FUNCTION TO GENERATE COLOR bassD ON VIRTUAL WHEEL
 // https://github.com/NeverPlayLegit/Rainbow-Fader-FastLED/blob/master/rainbow.ino
 CRGB Scroll(int pos) {
   pos = abs(pos);
@@ -99,16 +119,6 @@ CRGB Scroll(int pos) {
     color.g = 255 - color.b;
     color.r = 1;
   }
-  /*
-  Serial.print(pos);
-  Serial.print(" -> ");
-  Serial.print("r: ");
-  Serial.print(color.r);
-  Serial.print("    g: ");
-  Serial.print(color.g);
-  Serial.print("    b: ");
-  Serial.println(color.b);
-  */
   return color;
 }
 
@@ -138,6 +148,9 @@ void readMSGEQ7()
     delayMicroseconds(30); // 
     left[band] = analogRead(audio1); // store left band reading
     right[band] = analogRead(audio2); // ... and the right
+
+    max[band] = max(left[band], right[band]); // grab max value between left and right audio bands
+
     digitalWrite(strobe, HIGH); 
   }
 }
@@ -161,6 +174,135 @@ void convertSingle()
     Serial.println(pre_react);
   }
 }
+
+// Calc bass react from current audio input
+void calcBassReact()
+{
+  long bass_input = 0;
+
+  // Do low pass filter:
+  // Add to input each of the bass frequencies
+  for(int i = bass_start; i <= bass_stop; i++)
+  {
+    bass_input += max[i];
+  }
+  Serial.print("Bass input: ");
+  Serial.println(bass_input);
+
+  if(bass_input > MIN_FREQ)
+  {
+    // Get num of leds for bass
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
+    long bass_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)bass_input)/  1023L;
+    bass_pre_react /= (bass_stop - bass_start + 1);
+
+
+    // Only react if we're greater than previous. 
+    // NOTE: will decay over time if not greater - handled later after LEDs are written
+    if(bass_pre_react > bass_react)
+      bass_react = bass_pre_react;
+
+    Serial.print("Bass: ");
+    Serial.println(bass_pre_react);
+  }
+}
+
+
+// Calc mid react from current audio input
+void calcMidReact()
+{
+  long mid_input = 0;
+
+  // Do low pass filter:
+  // Add to input each of the mid frequencies
+  for(int i = mid_start; i <= mid_stop; i++)
+  {
+    mid_input += max[i];
+  }
+
+  if(mid_input > MIN_FREQ)
+  {
+    // Get num of leds for mid
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
+    long mid_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)mid_input)/ 1023L;
+    mid_pre_react /= (mid_stop - mid_start + 1);
+
+
+    // Only react if we're greater than previous. 
+    // NOTE: will decay over time if not greater - handled later after LEDs are written
+    if(mid_pre_react > mid_react)
+      mid_react = mid_pre_react;
+
+    Serial.print("mid: ");
+    Serial.println(mid_pre_react);
+  }
+}
+
+// Calc treb react from current audio input
+void calcTrebReact()
+{
+  long treb_input = 0;
+
+  // Do low pass filter:
+  // Add to input each of the treb frequencies
+  for(int i = treb_start; i <= treb_stop; i++)
+  {
+    treb_input += max[i];
+  }
+
+  if(treb_input > MIN_FREQ)
+  {
+    // Get num of leds for treb
+    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channel
+    long treb_pre_react = ((long)NUM_LEDS_PER_CHNL * (long)treb_input)/ 1023L;
+    treb_pre_react /= (treb_stop - treb_start + 1);
+
+
+    // Only react if we're greater than previous. 
+    // NOTE: will decay over time if not greater - handled later after LEDs are written
+    if(treb_pre_react > treb_react)
+      treb_react = treb_pre_react;
+
+    Serial.print("treb: ");
+    Serial.println(treb_pre_react);
+  }
+}
+
+void decayChannels()
+{
+  if(bass_react > 0)
+    bass_react--;
+
+  if(mid_react > 0)
+    mid_react--;
+
+  if(treb_react > 0)
+    treb_react--;
+}
+
+// Lights up the LEDs.
+// NOTE: sideffect - makes the party lit
+void fireBurninOnTheDanceFloor()
+{
+  for(int i = NUM_LEDS - 1; i >= 0; i--) 
+  {
+    int led_val = (NUM_LEDS - 1) - i;
+    
+    if (led_val < bass_react)
+      leds[i] = bass_color;
+    else if (led_val >= bass_react && 
+             led_val <  bass_react + mid_react)
+      leds[i] = mid_color;
+    else if(led_val >= mid_react && 
+            led_val <  mid_react + treb_react)
+      leds[i] = treb_color;
+    else
+      leds[i] = CRGB(0, 0, 0);      
+  }
+  FastLED.show(); 
+}
+
+
 
 
 // FUNCTION TO VISUALIZE WITH A SINGLE LEVEL
@@ -189,12 +331,22 @@ void singleLevel()
 
 void danceFloor()
 {
+  // Read our audio input
   readMSGEQ7();
 
+  // Calc our channel values
+  calcBassReact();
+  calcMidReact();
+  calcTrebReact();
 
+  // Light it up
+  fireBurninOnTheDanceFloor();
+
+  // Decay everything over time
+  decayChannels();
 }
 
 void loop()
 {  
-  singleLevel();
+  danceFloor();
 }
