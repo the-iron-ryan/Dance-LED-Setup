@@ -2,14 +2,18 @@
 #include "Changer.h"
 #include "PushThrough.h"
 
+#define BASS_PROPORTION 0.33
+#define MID_PROPORTION 0.33
+#define TREB_PROPORTION 0.33
 
 void PushThrough::step() {
 
     int* threeChannel = this->squeezeToThreeChannels();
 
-    CRGB newColor(threeChannel[0], threeChannel[1], threeChannel[2]);
+    int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
+    CRGB newColor = this->getColorFromPalette(colorIndex);
 
-    this->shiftPixDown(8);
+    this->shiftPixDown(4);
 
     leds[this->maxLED] = newColor;
 
@@ -38,5 +42,16 @@ void PushThrough::shiftPixDown(int speed)
 
     }
 
+
+}
+
+int PushThrough::squeezeChannelsToInt(int bass, int mid, int treb)
+{
+
+    int bassProp = (int)(bass * BASS_PROPORTION);
+    int midProp  = (int)(mid  / MID_PROPORTION);
+    int trebProp = (int)(treb / TREB_PROPORTION);
+
+    return bassProp + midProp + trebProp;
 
 }

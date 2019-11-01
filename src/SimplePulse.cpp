@@ -2,9 +2,9 @@
 #include "Changer.h"
 #include "SimplePulse.h"
 
-#define BASS_PROPORTION 0.75
-#define MID_PROPORTION 0.125
-#define TREB_PROPORTION 0.125
+#define BASS_PROPORTION 0.90
+#define MID_PROPORTION 0.05
+#define TREB_PROPORTION 0.05
 
 void SimplePulse::step() {
 

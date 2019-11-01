@@ -33,9 +33,10 @@ DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
 255,   255,255,255 }; //full white
 
 DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN ) {
-  0,    0,    21,   140, // midnight blue
-  64,   0,    196,  84,  // emerald green
-  224,  232,  104,  0,   // pumpkin orange
+  0,    0,    0,    0,
+  32,    0,    21,   140, // midnight blue
+  128,   0,    196,  84,  // emerald green
+  200,  232,  104,  0,   // pumpkin orange
   255,  255,  255,  255, // full white
 };
 
@@ -92,7 +93,7 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new PushThrough(channels, leds, 230, NUM_LEDS);
+  changers[0] = new PushThrough(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
   changers[1] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
 
   // SERIAL AND INPUT SETUP
