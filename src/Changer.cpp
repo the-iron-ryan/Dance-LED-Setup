@@ -47,8 +47,8 @@ int* Changer::squeezeToThreeChannels()
 {
 
     // Avg 8-track into 3 channels
-    int bass = ( this->channels[0] + this->channels[1] + this->channels[2] ) / 2;
-    int mid  = ( this->channels[3] + this->channels[4]                     ) / 3;
+    int bass = ( this->channels[0] + this->channels[1] + this->channels[2] ) / 3;
+    int mid  = ( this->channels[3] + this->channels[4]                     ) / 2;
     int treb = ( this->channels[5] + this->channels[6]                     ) / 2;
 
     // Crunch numbers into range from [0, 255]
@@ -59,4 +59,14 @@ int* Changer::squeezeToThreeChannels()
 
     return result;
 
+}
+
+void Changer::setPalette(CRGBPalette16 _palette)
+{
+    this->palette = _palette;
+}
+
+CRGB Changer::getColorFromPalette(int colorIndex)
+{
+    return ColorFromPalette(this->palette, colorIndex);
 }

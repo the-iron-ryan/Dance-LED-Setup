@@ -24,8 +24,20 @@
 CRGB realleds[NUM_LEDS];
 CRGBSet leds(realleds, NUM_LEDS);
 
-// Time passed tracking
-#define TICKS_PER_EPOCH 100
+
+// Palette definition
+DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
+  0,     0,  0,  0,   //black
+128,   255,  0,  0,   //red
+224,   255,255,  0,   //bright yellow
+255,   255,255,255 }; //full white
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN ) {
+  0,    0,    21,   140, // midnight blue
+  64,   0,    196,  84,  // emerald green
+  224,  232,  104,  0,   // pumpkin orange
+  255,  255,  255,  255, // full white
+};
 
 // AUDIO INPUT SETUP
 int strobe = 4;
@@ -52,10 +64,12 @@ long post_react = 0; // OLD SPIKE CONVERSION
 // Current tick
 long tick = 0;
 
+// Time passed tracking
+#define TICKS_PER_EPOCH 1000
 
 // Preinit changer array
-#define NUM_CHANGERS 1
-Changer* changers[3];
+#define NUM_CHANGERS 2
+Changer* changers[NUM_CHANGERS];
 
 void setup()
 {
@@ -79,8 +93,7 @@ void setup()
 
   // CREATE CHANGER COLLECTION
   changers[0] = new PushThrough(channels, leds, 230, NUM_LEDS);
-  changers[1] = new Rainbow    (channels, leds, 230, NUM_LEDS);
-  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS);
+  changers[1] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -146,8 +159,6 @@ void printChannels()
   Serial.print(left[5]);
   Serial.print('\t');
   Serial.print(left[6]);
-  Serial.print('\t');
-  Serial.print(left[7]);
   Serial.println();
 }
 
@@ -165,7 +176,7 @@ void loop()
 
   //printLED(leds, NUM_LEDS);
   //printCLED(NUM_LEDS);
-  printChannels();
+  //printChannels();
 
   FastLED.show();
 
