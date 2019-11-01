@@ -10,7 +10,6 @@ void movePixDown(CRGB* pix, int min, int max)
     }
 }
 
-
 void PushThrough::step() {
 
     // Avg 8-track into 3 channels

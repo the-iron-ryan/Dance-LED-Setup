@@ -23,8 +23,10 @@ class Changer
         int minLED;
         int maxLED;
 
-        int*  channels;
+        int* channels;
         
+        void setAllPixInRange(int minPix, int maxPix, CRGB color);
+
 };
 
 #endif
