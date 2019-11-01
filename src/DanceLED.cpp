@@ -4,6 +4,7 @@
 #include "Changer.h"
 #include "Rainbow.h"
 #include "SimplePulse.h"
+#include "MixBar.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -69,7 +70,7 @@ long tick = 0;
 #define TICKS_PER_EPOCH 1000
 
 // Preinit changer array
-#define NUM_CHANGERS 2
+#define NUM_CHANGERS 3
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -93,8 +94,9 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new PushThrough(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
-  changers[1] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
+  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
+  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN);
+  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);

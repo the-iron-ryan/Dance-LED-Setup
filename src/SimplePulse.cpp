@@ -12,6 +12,7 @@ void SimplePulse::step() {
 
     int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
 
+    this->setAllPixInRange(0, this->minLED, CRGB::Black);
     this->setAllPixInRange(this->minLED, this->maxLED, this->getColorFromPalette(colorIndex));
 
     return;
