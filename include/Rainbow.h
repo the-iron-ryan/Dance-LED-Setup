@@ -7,7 +7,7 @@ class Rainbow: public Changer
 {
     public:
 
-        Rainbow(int* _channels, CRGB* _leds, int _minLED, int _maxLED) : Changer(_channels, _leds, _minLED, _maxLED) {}
+        Rainbow(int* _channels, CRGBSet _leds, int _minLED, int _maxLED) : Changer(_channels, _leds, _minLED, _maxLED) {}
 
         virtual void step();
 

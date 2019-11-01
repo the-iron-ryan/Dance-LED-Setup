@@ -3,6 +3,7 @@
 #include "PushThrough.h"
 #include "Changer.h"
 #include "Rainbow.h"
+#include "SimplePulse.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -15,15 +16,16 @@
 // This code uses the Sparkfun Spectrum Shield
 
 // LED LIGHTING SETUP
-#define LED_PIN     6
-#define NUM_LEDS    150
+#define LED_PIN     7
+#define NUM_LEDS    1097
 #define BRIGHTNESS  10
 #define LED_TYPE    NEOPIXEL
 #define COLOR_ORDER GRB
-CRGB leds[NUM_LEDS];
+CRGB realleds[NUM_LEDS];
+CRGBSet leds(realleds, NUM_LEDS);
 
 // Time passed tracking
-#define TICKS_PER_EPOCH 10000
+#define TICKS_PER_EPOCH 100
 
 // AUDIO INPUT SETUP
 int strobe = 4;
@@ -32,6 +34,7 @@ int audio1 = A0;
 int audio2 = A1;
 int left[7];
 int right[7];
+int channels[7];
 int band;
 int audio_input = 0;
 int freq = 0;
@@ -51,8 +54,8 @@ long tick = 0;
 
 
 // Preinit changer array
-#define NUM_CHANGERS 2
-Changer* changers[NUM_CHANGERS];
+#define NUM_CHANGERS 1
+Changer* changers[3];
 
 void setup()
 {
@@ -75,11 +78,12 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new PushThrough(left, leds, 230, 1097);
-  changers[1] = new Rainbow    (left, leds, 230, 1097);
+  changers[0] = new PushThrough(channels, leds, 230, NUM_LEDS);
+  changers[1] = new Rainbow    (channels, leds, 230, NUM_LEDS);
+  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS);
 
   // SERIAL AND INPUT SETUP
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("\nListening...");
 }
 
@@ -94,6 +98,7 @@ void readMSGEQ7()
     delayMicroseconds(30); // 
     left[band] = analogRead(audio1); // store left band reading
     right[band] = analogRead(audio2); // ... and the right
+    channels[band] = max(left[band], right[band]); // Add the maximum between the two as that channel output
     digitalWrite(strobe, HIGH); 
   }
 }
@@ -106,9 +111,49 @@ int getCurrentEpoch()
   return tick / TICKS_PER_EPOCH;
 }
 
+void printLED(CRGBSet set, int index)
+{
+  Serial.print(set[index].r);
+  Serial.print(",\t");
+  Serial.print(set[index].g);
+  Serial.print(",\t");
+  Serial.print(set[index].b);
+  Serial.println();
+}
+
+void printCLED(int index)
+{
+  Serial.print(realleds[index].r);
+  Serial.print(",\t");
+  Serial.print(realleds[index].g);
+  Serial.print(",\t");
+  Serial.print(realleds[index].b);
+  Serial.println();
+}
+
+void printChannels()
+{
+  Serial.print(left[0]);
+  Serial.print('\t');
+  Serial.print(left[1]);
+  Serial.print('\t');
+  Serial.print(left[2]);
+  Serial.print('\t');
+  Serial.print(left[3]);
+  Serial.print('\t');
+  Serial.print(left[4]);
+  Serial.print('\t');
+  Serial.print(left[5]);
+  Serial.print('\t');
+  Serial.print(left[6]);
+  Serial.print('\t');
+  Serial.print(left[7]);
+  Serial.println();
+}
+
 void loop()
 {  
-  
+
   // Update channel info
   readMSGEQ7();
 
@@ -116,6 +161,13 @@ void loop()
   int epoch = getCurrentEpoch();
 
   // Iterate whichever changer corresponds to the current epoch
-  changers[epoch % NUM_CHANGERS]++;
+  changers[epoch % NUM_CHANGERS]->step();
+
+  //printLED(leds, NUM_LEDS);
+  //printCLED(NUM_LEDS);
+  printChannels();
+
+  FastLED.show();
+
 
 }

@@ -7,7 +7,7 @@ class Changer
 {
     public:
         
-        Changer(int* _channels, CRGB* _leds, int _minLED, int _maxLED) : leds(_leds), channels(_channels), minLED(_minLED), maxLED(_maxLED) {}
+        Changer(int* _channels, CRGBSet _leds, int _minLED, int _maxLED) : leds(_leds), channels(_channels), minLED(_minLED), maxLED(_maxLED) {}
 
         Changer& operator++(int n)
         {
@@ -19,13 +19,19 @@ class Changer
 
     protected:
 
-        CRGB* leds;
+        CRGBSet leds;
         int minLED;
         int maxLED;
 
         int* channels;
         
         void setAllPixInRange(int minPix, int maxPix, CRGB color);
+
+        void interpBetweenPixels(int minPix, int maxPix);
+
+        void interpBetweenPixels(int minPix, int maxPix, CRGB firstColor, CRGB secondColor);
+
+        int* squeezeToThreeChannels();
 
 };
 
