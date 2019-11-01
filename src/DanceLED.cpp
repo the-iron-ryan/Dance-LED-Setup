@@ -67,11 +67,18 @@ DEFINE_GRADIENT_PALETTE( PAL_POINTY_PARTY ) {
   255,  255,  255,  255, // full while
 };
 
-DEFINE_GRADIENT_PALETTE( PAL_UNDER_THE_SEA ) {
-  0,    0,    0,    0, // black
+DEFINE_GRADIENT_PALETTE( PAL_RAINBOW ) {
+  0,    0,    0,    0,    // black
+  10,   209,  0,    0,    // r
+  50,   255,  102,  32,   // o
+  100,   255,  213,  33,   // y
+  150,   51,   221,  0,    // g
+  200,   17,   51,   204,  // b
+  225,   34,   0,    102,  // i
+  255,   51,   0,    68,   // v
 };
 
-#define NUM_PALETTES 4
+#define NUM_PALETTES 5
 CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
@@ -140,6 +147,7 @@ void setup()
   palettes[1] = PAL_HALLOWEEN_GHOUL;
   palettes[2] = PAL_HALLOWEEN_PUMPKIN;
   palettes[3] = PAL_POINTY_PARTY;
+  palettes[4] = PAL_RAINBOW;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
