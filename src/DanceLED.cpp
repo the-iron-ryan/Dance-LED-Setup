@@ -1,6 +1,8 @@
 #include <FastLED.h>
+
 #include "PushThrough.h"
 #include "Changer.h"
+#include "Rainbow.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -20,7 +22,8 @@
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
 
-#define UPDATES_PER_SECOND 100
+// Time passed tracking
+#define TICKS_PER_EPOCH 10000
 
 // AUDIO INPUT SETUP
 int strobe = 4;
@@ -43,10 +46,13 @@ long pre_react = 0; // NEW SPIKE CONVERSION
 long react = 0; // NUMBER OF LEDs BEING LIT
 long post_react = 0; // OLD SPIKE CONVERSION
 
-// RAINBOW WAVE SETTINGS
-int wheel_speed = 2;
+// Current tick
+long tick = 0;
 
-Changer pThru = PushThrough(left, leds, 230, 1097);
+
+// Preinit changer array
+#define NUM_CHANGERS 2
+Changer* changers[NUM_CHANGERS];
 
 void setup()
 {
@@ -68,8 +74,9 @@ void setup()
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
 
-  // CREATE CHANGERS
-
+  // CREATE CHANGER COLLECTION
+  changers[0] = new PushThrough(left, leds, 230, 1097);
+  changers[1] = new Rainbow    (left, leds, 230, 1097);
 
   // SERIAL AND INPUT SETUP
   Serial.begin(115200);
@@ -91,8 +98,24 @@ void readMSGEQ7()
   }
 }
 
+
+// Gets the current epoch, according to the number of ticks
+int getCurrentEpoch()
+{
+  tick++;
+  return tick / TICKS_PER_EPOCH;
+}
+
 void loop()
 {  
+  
+  // Update channel info
   readMSGEQ7();
-  pThru++;
+
+  // Get current epoch
+  int epoch = getCurrentEpoch();
+
+  // Iterate whichever changer corresponds to the current epoch
+  changers[epoch % NUM_CHANGERS]++;
+
 }
