@@ -33,13 +33,46 @@ DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
 224,   255,255,  0,   //bright yellow
 255,   255,255,255 }; //full white
 
-DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN ) {
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_GEN ) {
   0,    0,    0,    0,
   32,    0,    21,   140, // midnight blue
   128,   0,    196,  84,  // emerald green
-  200,  232,  104,  0,   // pumpkin orange
+  170,  232,  104,  0,   // pumpkin orange
+  230,  232,  104,  0,   // pumpkin orange
   255,  255,  255,  255, // full white
 };
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_PUMPKIN ) {
+  0,    0,    0,    0,  // black
+  16,   100,  25,   25, // dark red
+  96,   230,  10,   10, // blood red
+  120,  255,  150,  40, // pumpkin orange
+  245,  255,  255,  40, // candle yellow
+  255,  255,  255,  255, // pure white
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_GHOUL ) {
+  0,    0,    0,    0,    // black
+  16,   90,   0,    120,  // dark purple
+  64,   160,  30,   160,  // light purple
+  200,  0,    150,  40,   // green
+  255,  255,  255,  255   // pure white
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_POINTY_PARTY ) {
+  0,    0,    0,    0, // black
+  16,   150,  44,   44, // Dark Rose
+  180,  208,  100,  100, // Old Rose
+  210,  220,  220,  220, // Grey
+  255,  255,  255,  255, // full while
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_UNDER_THE_SEA ) {
+  0,    0,    0,    0, // black
+};
+
+#define NUM_PALETTES 4
+CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
 int strobe = 4;
@@ -69,6 +102,10 @@ long tick = 0;
 // Time passed tracking
 #define TICKS_PER_EPOCH 1000
 
+// Track epochs and preallocate random selectors.
+int currentChanger;
+int currentPalette;
+
 // Preinit changer array
 #define NUM_CHANGERS 3
 Changer* changers[NUM_CHANGERS];
@@ -94,9 +131,15 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
-  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN);
-  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN);
+  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+
+  // CREATE PALETTE COLLECTION
+  palettes[0] = PAL_HALLOWEEN_GEN;
+  palettes[1] = PAL_HALLOWEEN_GHOUL;
+  palettes[2] = PAL_HALLOWEEN_PUMPKIN;
+  palettes[3] = PAL_POINTY_PARTY;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -165,17 +208,27 @@ void printChannels()
   Serial.println();
 }
 
+void startNewEpoch()
+{
+  currentChanger = random(NUM_CHANGERS);
+  currentPalette = random(NUM_PALETTES);
+
+  changers[currentChanger]->setPalette(palettes[currentPalette]);
+}
+
 void loop()
 {  
 
   // Update channel info
   readMSGEQ7();
 
-  // Get current epoch
-  int epoch = getCurrentEpoch();
+  if (tick % TICKS_PER_EPOCH == 0)
+  {
+    startNewEpoch();
+  }
 
   // Iterate whichever changer corresponds to the current epoch
-  changers[epoch % NUM_CHANGERS]->step();
+  changers[currentChanger]->step();
 
   //printLED(leds, NUM_LEDS);
   //printCLED(NUM_LEDS);
@@ -183,5 +236,6 @@ void loop()
 
   FastLED.show();
 
+  tick++;
 
 }

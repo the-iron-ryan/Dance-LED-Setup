@@ -6,6 +6,8 @@
 #define MID_PROPORTION 0.33
 #define TREB_PROPORTION 0.33
 
+#define PUSH_SPEED 6
+
 void PushThrough::step() {
 
     int* threeChannel = this->squeezeToThreeChannels();
@@ -13,7 +15,7 @@ void PushThrough::step() {
     int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
     CRGB newColor = this->getColorFromPalette(colorIndex);
 
-    this->shiftPixDown(4);
+    this->shiftPixDown(PUSH_SPEED);
 
     leds[this->maxLED] = newColor;
 
@@ -27,6 +29,7 @@ void PushThrough::shiftPixDown(int speed)
     int next;
     CRGB nextColor;
     int offset = this->ticks % speed;
+    this->ticks++;
 
     for (int i = this->minLED + offset; i < this->maxLED; i += speed)
     {

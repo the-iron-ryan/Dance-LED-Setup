@@ -11,7 +11,7 @@
 #define SAMPLE_7 224
 #define SAMPLE_8 255
 
-const int paletteIndex[] = { 0, 32, 64, 96, 128, 160, 192, 224, 255 };
+const int paletteIndex[] = { 32, 64, 96, 128, 160, 192, 224, 255 };
 
 void MixBar::step() {
 
