@@ -1,4 +1,6 @@
 #include <FastLED.h>
+#include "PushThrough.h"
+#include "Changer.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -44,6 +46,8 @@ long post_react = 0; // OLD SPIKE CONVERSION
 // RAINBOW WAVE SETTINGS
 int wheel_speed = 2;
 
+Changer pThru = PushThrough(left, leds, 230, 1097);
+
 void setup()
 {
   // SPECTRUM SETUP
@@ -63,6 +67,9 @@ void setup()
   for (int i = 0; i < NUM_LEDS; i++)
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
+
+  // CREATE CHANGERS
+
 
   // SERIAL AND INPUT SETUP
   Serial.begin(115200);
@@ -237,7 +244,6 @@ void doubleLevel()
 
 void loop()
 {  
-  //singleLevel();
-  doubleLevel();
-  //delay(1);
+  readMSGEQ7();
+  pThru++;
 }
