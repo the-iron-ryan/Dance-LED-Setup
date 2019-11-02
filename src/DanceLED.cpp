@@ -1,5 +1,11 @@
 #include <FastLED.h>
 
+#include "PushThrough.h"
+#include "Changer.h"
+#include "Rainbow.h"
+#include "SimplePulse.h"
+#include "MixBar.h"
+
 // Arduino Music Visualizer 0.3
 
 // This music visualizer works off of analog input from a 3.5mm headphone jack
@@ -11,16 +17,69 @@
 // This code uses the Sparkfun Spectrum Shield
 
 // LED LIGHTING SETUP
-#define LED_PIN             6
-#define NUM_LEDS            300
-#define NUM_LEDS_PER_CHNL   NUM_LEDS/3
-#define BRIGHTNESS          64
-#define LED_TYPE            NEOPIXEL
-#define MIN_FREQ            80          // Min value to ignore 
-#define AMP_AMT             0
-CRGB leds[NUM_LEDS];
+#define LED_PIN     7
+#define NUM_LEDS    1097
+#define BRIGHTNESS  10
+#define LED_TYPE    NEOPIXEL
+#define COLOR_ORDER GRB
+CRGB realleds[NUM_LEDS];
+CRGBSet leds(realleds, NUM_LEDS);
 
-#define UPDATES_PER_SECOND 100
+
+// Palette definition
+DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
+  0,     0,  0,  0,   //black
+128,   255,  0,  0,   //red
+224,   255,255,  0,   //bright yellow
+255,   255,255,255 }; //full white
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_GEN ) {
+  0,    0,    0,    0,
+  32,    0,    21,   140, // midnight blue
+  128,   0,    196,  84,  // emerald green
+  170,  232,  104,  0,   // pumpkin orange
+  230,  232,  104,  0,   // pumpkin orange
+  255,  255,  255,  255, // full white
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_PUMPKIN ) {
+  0,    0,    0,    0,  // black
+  16,   100,  25,   25, // dark red
+  96,   230,  10,   10, // blood red
+  120,  255,  150,  40, // pumpkin orange
+  245,  255,  255,  40, // candle yellow
+  255,  255,  255,  255, // pure white
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_GHOUL ) {
+  0,    0,    0,    0,    // black
+  16,   90,   0,    120,  // dark purple
+  64,   160,  30,   160,  // light purple
+  200,  0,    150,  40,   // green
+  255,  255,  255,  255   // pure white
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_POINTY_PARTY ) {
+  0,    0,    0,    0, // black
+  16,   150,  44,   44, // Dark Rose
+  180,  208,  100,  100, // Old Rose
+  210,  220,  220,  220, // Grey
+  255,  255,  255,  255, // full while
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_RAINBOW ) {
+  0,    0,    0,    0,    // black
+  10,   209,  0,    0,    // r
+  50,   255,  102,  32,   // o
+  100,   255,  213,  33,   // y
+  150,   51,   221,  0,    // g
+  200,   17,   51,   204,  // b
+  225,   34,   0,    102,  // i
+  255,   51,   0,    68,   // v
+};
+
+#define NUM_PALETTES 5
+CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
 int strobe = 4;
@@ -29,40 +88,10 @@ int audio1 = A0;
 int audio2 = A1;
 int left[7];
 int right[7];
-long max[7]; // max of left and right channels
+int channels[7];
 int band;
 int audio_input = 0;
 int freq = 0;
-
-// Channel indexes
-int bass_start = 0;
-int bass_stop = 1;
-
-int mid_start = 2;
-int mid_stop = 4;
-
-int treb_start = 5;
-int treb_stop = 6;
-
-// Channel Reactions
-long bass_react = 0;
-long mid_react = 0;
-long treb_react = 0;
-
-// Channel LEDs start/stop points
-int bass_led_start = 0;
-int bass_led_stop = bass_led_start + NUM_LEDS_PER_CHNL - 1;
-
-int mid_led_start = bass_led_stop + 1;
-int mid_led_stop = mid_led_start + NUM_LEDS_PER_CHNL - 1;
-
-int treb_led_start = mid_led_stop + 1;
-int treb_led_stop = treb_led_start + NUM_LEDS_PER_CHNL - 1;
-
-// Channel Starting Colors
-CRGB bass_color = CRGB::Red;
-CRGB mid_color = CRGB::Green;
-CRGB treb_color = CRGB::Blue;
 
 // STANDARD VISUALIZER VARIABLES
 int midway = NUM_LEDS / 2; // CENTER MARK FROM DOUBLE LEVEL VISUALIZER
@@ -74,75 +103,19 @@ long pre_react = 0; // NEW SPIKE CONVERSION
 long react = 0; // NUMBER OF LEDs BEING LIT
 long post_react = 0; // OLD SPIKE CONVERSION
 
-// RAINBOW WAVE SETTINGS
-int wheel_speed = 2;
+// Current tick
+long tick = 0;
 
-// DIVIDE AND CONQUER PARAMETERS
-#define NUM_SLICES 4
-#define numBreakIndecies 12
-int breakIndecies[numBreakIndecies] = {
-  0,
-  2,
-  5,
-  8,
-  
-  11,
-  15,
-  19,
-  24,
+// Time passed tracking
+#define TICKS_PER_EPOCH 1000
 
-  29,
-  35,
-  41,
-  48,
-};
-int layers[NUM_SLICES][8][2]; // Declaration of 3d layer array
-int ringsInSlice[NUM_SLICES];
-float layerActivationForSection[NUM_SLICES];
-CRGB colorForSection = {
-  CRGB::Red,
-  CRGB::Blue,
-  CRGB::Yellow,
-  CRGB::Blue,
-};
+// Track epochs and preallocate random selectors.
+int currentChanger;
+int currentPalette;
 
-void calculateLayers()
-{
-
-  int ring;
-  int section;
-
-  int i;
-  for (i = 0; i < numBreakIndecies - 1; i++)
-  {
-
-    int sectionMinLED = breakIndecies[i];
-    int sectionMaxLED = breakIndecies[i + 1] - 1;
-
-    ring    = i / NUM_SLICES;
-    section = i % NUM_SLICES;
-
-    ringsInSlice[section] = ring;
-
-    layers[section][ring][0] = sectionMinLED;
-    layers[section][ring][1] = sectionMaxLED; 
-
-  }
-
-  ring = i / NUM_SLICES;
-  section = i % NUM_SLICES;
-
-  ringsInSlice[section] = ring;
-
-  layers[section][ring][0] = breakIndecies[numBreakIndecies - 1];
-  layers[section][ring][0] = NUM_LEDS; 
-
-  for (int i = 0; i < NUM_SLICES; i++)
-  {
-    layerActivationForSection[i] = 1.0 / ringsInSlice[i];
-  }
-
-}
+// Preinit changer array
+#define NUM_CHANGERS 3
+Changer* changers[NUM_CHANGERS];
 
 void setup()
 {
@@ -164,46 +137,21 @@ void setup()
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
 
+  // CREATE CHANGER COLLECTION
+  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+
+  // CREATE PALETTE COLLECTION
+  palettes[0] = PAL_HALLOWEEN_GEN;
+  palettes[1] = PAL_HALLOWEEN_GHOUL;
+  palettes[2] = PAL_HALLOWEEN_PUMPKIN;
+  palettes[3] = PAL_POINTY_PARTY;
+  palettes[4] = PAL_RAINBOW;
+
   // SERIAL AND INPUT SETUP
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("\nListening...");
-  
-}
-
-// FUNCTION TO GENERATE COLOR bassD ON VIRTUAL WHEEL
-// https://github.com/NeverPlayLegit/Rainbow-Fader-FastLED/blob/master/rainbow.ino
-CRGB Scroll(int pos) {
-  pos = abs(pos);
-  CRGB color (0,0,0);
-  if(pos < 85) {
-    color.g = 0;
-    color.r = ((float)pos / 85.0f) * 255.0f;
-    color.b = 255 - color.r;
-  } else if(pos < 170) {
-    color.g = ((float)(pos - 85) / 85.0f) * 255.0f;
-    color.r = 255 - color.g;
-    color.b = 0;
-  } else if(pos < 256) {
-    color.b = ((float)(pos - 170) / 85.0f) * 255.0f;
-    color.g = 255 - color.b;
-    color.r = 1;
-  }
-  return color;
-}
-
-// FUNCTION TO GET AND SET COLOR
-// THE ORIGINAL FUNCTION WENT BACKWARDS
-// THE MODIFIED FUNCTION SENDS WAVES OUT FROM FIRST LED
-// https://github.com/NeverPlayLegit/Rainbow-Fader-FastLED/blob/master/rainbow.ino
-void singleRainbow()
-{
-  for(int i = NUM_LEDS - 1; i >= 0; i--) {
-    if (i < react)
-      leds[i] = Scroll((i * 256 / 50 + k) % 256);
-    else
-      leds[i] = CRGB(0, 0, 0);      
-  }
-  FastLED.show(); 
 }
 
 void readMSGEQ7()
@@ -217,316 +165,85 @@ void readMSGEQ7()
     delayMicroseconds(30); // 
     left[band] = analogRead(audio1); // store left band reading
     right[band] = analogRead(audio2); // ... and the right
-
-    max[band] = max(left[band], right[band]); // grab max value between left and right audio bands
-
+    channels[band] = max(left[band], right[band]); // Add the maximum between the two as that channel output
     digitalWrite(strobe, HIGH); 
   }
 }
 
-void convertSingle()
+
+// Gets the current epoch, according to the number of ticks
+int getCurrentEpoch()
 {
-  if (left[freq] > right[freq])
-    audio_input = left[freq];
-  else
-    audio_input = right[freq];
-
-  if (audio_input > 80)
-  {
-    pre_react = ((long)NUM_LEDS * (long)audio_input) / 1023L; // TRANSLATE AUDIO LEVEL TO NUMBER OF LEDs
-
-    if (pre_react > react) // ONLY ADJUST LEVEL OF LED IF LEVEL HIGHER THAN CURRENT LEVEL
-      react = pre_react;
-
-    Serial.print(audio_input);
-    Serial.print(" -> ");
-    Serial.println(pre_react);
-  }
+  tick++;
+  return tick / TICKS_PER_EPOCH;
 }
 
-// Calc bass react from current audio input
-void calcBassReact()
+void printLED(CRGBSet set, int index)
 {
-  long bass_input = 0;
-
-  // Do low pass filter:
-  // Add to input each of the bass frequencies
-  for(int i = bass_start; i <= bass_stop; i++)
-  {
-    bass_input += max[i];
-  }
-  Serial.print("bass input: ");
-  Serial.println(bass_input);
-
-  if(bass_input > MIN_FREQ)
-  {
-    // Get num of leds for bass
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
-    long max_bass_freq = 1023L * (long)(bass_stop - bass_start + 1);
-    float bass_pre_react = bass_input / max_bass_freq;
-
-    Serial.print("bass max: ");
-    Serial.println(max_bass_freq);
-
-    // Only react if we're greater than previous. 
-    // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(bass_pre_react + AMP_AMT > bass_react)
-      bass_react = bass_pre_react + AMP_AMT;
-
-    Serial.print("bass %: ");
-    Serial.println(bass_pre_react);
-  }
+  Serial.print(set[index].r);
+  Serial.print(",\t");
+  Serial.print(set[index].g);
+  Serial.print(",\t");
+  Serial.print(set[index].b);
+  Serial.println();
 }
 
-
-// Calc mid react from current audio input
-void calcMidReact()
+void printCLED(int index)
 {
-  long mid_input = 0;
-
-  // Do low pass filter:
-  // Add to input each of the mid frequencies
-  for(int i = mid_start; i <= mid_stop; i++)
-  {
-    mid_input += max[i];
-  }
-  Serial.print("mid input: ");
-  Serial.println(mid_input);
-
-  if(mid_input > MIN_FREQ)
-  {
-    // Get num of leds for mid
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
-    long max_mid_freq = 1023L * (long)(mid_stop - mid_start + 1);
-    float mid_pre_react = mid_input / max_mid_freq;
-
-    Serial.print("mid max: ");
-    Serial.println(max_mid_freq);
-
-    // Only react if we're greater than previous. 
-    // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(mid_pre_react + AMP_AMT > mid_react)
-      mid_react = mid_pre_react + AMP_AMT;
-
-    Serial.print("mid %: ");
-    Serial.println(mid_pre_react);
-  }
+  Serial.print(realleds[index].r);
+  Serial.print(",\t");
+  Serial.print(realleds[index].g);
+  Serial.print(",\t");
+  Serial.print(realleds[index].b);
+  Serial.println();
 }
 
-// Calc treb react from current audio input
-void calcTrebReact()
+void printChannels()
 {
-  long treb_input = 0;
-
-  // Do low pass filter:
-  // Add to input each of the treb frequencies
-  for(int i = treb_start; i <= treb_stop; i++)
-  {
-    treb_input += max[i];
-  }
-  Serial.print("treb input: ");
-  Serial.println(treb_input);
-
-  if(treb_input > MIN_FREQ)
-  {
-    // Get num of leds for treb
-    // NOTE: max freq per channel is 1023. We can get the total max by multiplying this value by total frequencies in this channela
-    long max_treb_freq = 1023L * (long)(treb_stop - treb_start + 1);
-    float treb_pre_react = treb_input / max_treb_freq;
-
-    Serial.print("treb max: ");
-    Serial.println(max_treb_freq);
-
-    // Only react if we're greater than previous. 
-    // NOTE: will decay over time if not greater - handled later after LEDs are written
-    if(treb_pre_react + AMP_AMT > treb_react)
-      treb_react = treb_pre_react + AMP_AMT;
-
-    Serial.print("treb %: ");
-    Serial.println(treb_pre_react);
-  }
+  Serial.print(left[0]);
+  Serial.print('\t');
+  Serial.print(left[1]);
+  Serial.print('\t');
+  Serial.print(left[2]);
+  Serial.print('\t');
+  Serial.print(left[3]);
+  Serial.print('\t');
+  Serial.print(left[4]);
+  Serial.print('\t');
+  Serial.print(left[5]);
+  Serial.print('\t');
+  Serial.print(left[6]);
+  Serial.println();
 }
 
-void decayChannels()
+void startNewEpoch()
 {
-  if(bass_react > 0)
-    bass_react--;
+  currentChanger = random(NUM_CHANGERS);
+  currentPalette = random(NUM_PALETTES);
 
-  if(mid_react > 0)
-    mid_react--;
-
-  if(treb_react > 0)
-    treb_react--;
-}
-
-// Lights up the LEDs.
-// NOTE: sideffect - makes the party lit
-void fireBurninOnTheDanceFloor()
-{
-  for(int i = NUM_LEDS - 1; i >= 0; i--) 
-  {
-    int led_val = (NUM_LEDS - 1) - i;
-    
-    if (led_val < bass_react)
-      leds[i] = bass_color;
-    else if (led_val >= bass_react && 
-             led_val <  bass_react + mid_react)
-      leds[i] = mid_color;
-    else if(led_val >= mid_react && 
-            led_val <  mid_react + treb_react)
-      leds[i] = treb_color;
-    else
-      leds[i] = CRGB(0, 0, 0);      
-  }
-  FastLED.show(); 
-}
-
-
-
-
-// FUNCTION TO VISUALIZE WITH A SINGLE LEVEL
-void singleLevel()
-{
-  readMSGEQ7();
-
-  convertSingle();
-
-  singleRainbow(); // APPLY COLOR
-
-  k = k - wheel_speed; // SPEED OF COLOR WHEEL
-  if (k < 0) // RESET COLOR WHEEL
-    k = 255;
-
-  // REMOVE LEDs
-  decay_check++;
-  if (decay_check > decay)
-  {
-    decay_check = 0;
-    if (react > 0)
-      react--;
-  }
-}
-
-
-void danceFloor()
-{
-  // Read our audio input
-  readMSGEQ7();
-
-  // Calc our channel values
-  calcBassReact();
-  calcMidReact();
-  calcTrebReact();
-
-  // Light it up
-  fireBurninOnTheDanceFloor();
-
-  // Decay everything over time
-  decayChannels();
-}
-
-void setDivide()
-{
-
-  float inputForSection[] = 
-  {
-    mid_react,
-    bass_react,
-    treb_react,
-    bass_react,
-  };
-
-  // Set all LEDS as off
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    leds[i] = CRGB(0, 0, 0);
-  }
-
-  // For every slice of the circle,
-  for (int i = 0; i < NUM_SLICES; i++)
-  {
-
-    // Figure out how many layers we need to activate in the slice
-    int numLayersToActivate = int((ringsInSlice[i] * inputForSection[i]) + 1);
-
-    // Squeeze number to the rings in slice in case i fucked up the math
-    if (numLayersToActivate > ringsInSlice[i])
-    {
-      numLayersToActivate = ringsInSlice[i];
-    }
-
-    // For each ring to be activated,
-    for (int ring = 0; ring < numLayersToActivate; ring++)
-    {
-
-      // For each pixel in that ring
-      for (int pixel = layers[i][ring][0]; pixel <= layers[i][ring][1]; pixel++)
-      {
-
-        int actualPixel = NUM_LEDS - pixel;
-
-        // light that fucker up
-        leds[actualPixel] = colorForSection[i];        
-
-      }
-
-    }
-
-  }
-
-  return;
-
-}
-
-void divideAndConquer()
-{
-
-  // Read our audio input
-  readMSGEQ7();
-
-  calcBassReact();
-  calcMidReact();
-  calcTrebReact();
-
-  // Run algo
-  setDivide();
-
-  // Decay everything over time
-  decayChannels();
-
-}
-
-void pushAlong()
-{
-
-  // Read input dickhead
-  readMSGEQ7();
-
-  calcBassReact();
-  calcMidReact();
-  calcTrebReact();
-
-  //RUN ALGO FUCK METHOD'S I'M GOING IN RAW
-  int red = mid_react * 255;
-  int green = treb_react * 255;
-  int blue = bass_react * 255;
-
-  CRGB newColor(red, green, blue);
-  
-  for (int i = NUM_LEDS - 1; i > 0; i--)
-  {
-
-    leds[i] = leds[i - 1];
-
-  }
-
-  leds[NUM_LEDS - 1] = newColor;
-
-  FastLED.show();
-
+  changers[currentChanger]->setPalette(palettes[currentPalette]);
 }
 
 void loop()
 {  
-  pushAlong();
+
+  // Update channel info
+  readMSGEQ7();
+
+  if (tick % TICKS_PER_EPOCH == 0)
+  {
+    startNewEpoch();
+  }
+
+  // Iterate whichever changer corresponds to the current epoch
+  changers[currentChanger]->step();
+
+  //printLED(leds, NUM_LEDS);
+  //printCLED(NUM_LEDS);
+  //printChannels();
+
+  FastLED.show();
+
+  tick++;
+
 }
