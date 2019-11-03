@@ -34,6 +34,8 @@ class Changer
         int minLED;
         int maxLED;
 
+        float maxBrightness = 1.0;
+
         CRGBPalette16 palette;
         
         void setAllPixInRange(int minPix, int maxPix, CRGB color);

@@ -114,7 +114,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 3
+#define NUM_CHANGERS 1
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -138,9 +138,9 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
-  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN_GHOUL);
-  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+//  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+//  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[0] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_HALLOWEEN_GEN;

@@ -41,10 +41,9 @@ void PushThrough::shiftPixDown(int speed)
         }
         nextColor = leds[next + 1];
 
-        this->setAllPixInRange(i, next, nextColor);
+        this->leds(i, next).fill_solid(nextColor);
 
     }
-
 
 }
 
@@ -52,8 +51,8 @@ int PushThrough::squeezeChannelsToInt(int bass, int mid, int treb)
 {
 
     int bassProp = (int)(bass * BASS_PROPORTION);
-    int midProp  = (int)(mid  / MID_PROPORTION);
-    int trebProp = (int)(treb / TREB_PROPORTION);
+    int midProp  = (int)(mid  * MID_PROPORTION);
+    int trebProp = (int)(treb * TREB_PROPORTION);
 
     return bassProp + midProp + trebProp;
 
