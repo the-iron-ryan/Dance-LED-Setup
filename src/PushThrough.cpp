@@ -6,7 +6,7 @@
 #define MID_PROPORTION 0.33
 #define TREB_PROPORTION 0.33
 
-#define PUSH_SPEED 6
+#define PUSH_SPEED 9
 
 void PushThrough::step() {
 
