@@ -5,6 +5,7 @@
 #include "Rainbow.h"
 #include "SimplePulse.h"
 #include "MixBar.h"
+#include "Quadrant.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -26,7 +27,6 @@ CRGB realleds[NUM_LEDS];
 CRGBSet leds(realleds, NUM_LEDS);
 
 
-// Palette definition
 DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
   0,     0,  0,  0,   //black
 128,   255,  0,  0,   //red
@@ -114,7 +114,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 1
+#define NUM_CHANGERS 4
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -138,9 +138,10 @@ void setup()
   FastLED.show();
 
   // CREATE CHANGER COLLECTION
-//  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
-//  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS, PAL_HALLOWEEN_GHOUL);
-  changers[0] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
+  changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS);
+  changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS);
+  changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS);
+  changers[4] = new Quadrant   (channels, leds, 230, NUM_LEDS);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_HALLOWEEN_GEN;
