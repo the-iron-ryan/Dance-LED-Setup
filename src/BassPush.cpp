@@ -1,14 +1,14 @@
 #include <FastLED.h>
 #include "Changer.h"
-#include "PushThrough.h"
+#include "BassPush.h"
 
-#define BASS_PROPORTION 0.5
-#define MID_PROPORTION 0.25
-#define TREB_PROPORTION 0.25
+#define BASS_PROPORTION 1.0
+#define MID_PROPORTION 0.0
+#define TREB_PROPORTION 0.0
 
 #define PUSH_SPEED 8
 
-void PushThrough::step() {
+void BassPush::step() {
 
     CRGB newColor = this->leds[this->maxLED];
 
@@ -26,6 +26,7 @@ void PushThrough::step() {
     newColor.r *= maxBrightness;
     newColor.g *= maxBrightness;
     newColor.b *= maxBrightness;
+    
 
     this->shiftPixDown(PUSH_SPEED);
 
@@ -35,7 +36,7 @@ void PushThrough::step() {
 
 }
 
-void PushThrough::shiftPixDown(int speed)
+void BassPush::shiftPixDown(int speed)
 {
 
     int next;
@@ -59,7 +60,7 @@ void PushThrough::shiftPixDown(int speed)
 
 }
 
-int PushThrough::squeezeChannelsToInt(int bass, int mid, int treb)
+int BassPush::squeezeChannelsToInt(int bass, int mid, int treb)
 {
 
     int bassProp = (int)(bass * BASS_PROPORTION);
@@ -70,7 +71,7 @@ int PushThrough::squeezeChannelsToInt(int bass, int mid, int treb)
 
 }
 
-void PushThrough::adjustPulseBrightness()
+void BassPush::adjustPulseBrightness()
 {
 
     int avg = 0;
@@ -79,18 +80,14 @@ void PushThrough::adjustPulseBrightness()
         avg += this->channels[i];
     }
     avg = avg / 2;
-
-    float newBrightness = avg / 1024.0;
-
-    this->maxBrightness *= 0.60;
-
-    if (newBrightness > this->maxBrightness) {
-        this->maxBrightness = newBrightness;
-    }
-
-    if (this->maxBrightness < 0.2)
+    
+    if (avg > 800)
     {
-        this->maxBrightness = 0.2;
+        this->maxBrightness = 1.0;
+    }
+    else
+    {
+        this->maxBrightness = 0;
     }
 
 }

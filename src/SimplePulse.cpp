@@ -6,48 +6,23 @@
 #define MID_PROPORTION 0.25
 #define TREB_PROPORTION 0.50
 
-void scaleLEDs(CRGBSet pix, float scale)
-{
-
-//    Serial.print(pix[500].r);
-//    Serial.print('\t');
-//    Serial.print(pix[500].g);
-//    Serial.print('\t');
-//    Serial.print(pix[500].b);
-//    Serial.println();
-
-    for(CRGB & pixel : pix)
-    {
-        pixel.r = (uint8_t)(pixel.r * scale);
-        pixel.g = (uint8_t)(pixel.g * scale);
-        pixel.b = (uint8_t)(pixel.b * scale);
-    }
-
-//    Serial.print(pix[500].r);
-//    Serial.print('\t');
-//    Serial.print(pix[500].g);
-//    Serial.print('\t');
-//    Serial.print(pix[500].b);
-//    Serial.println();
-
-}
 
 void SimplePulse::step() {
 
     this->leds(0, this->minLED).fill_solid(CRGB::Black);
 
     int ogBrightness = this->maxBrightness;
-    calcDampenFactor();
+    this->adjustPulseBrightness();
     
     if (ogBrightness < this->maxBrightness)
     {
         int* threeChannel = this->squeezeToThreeChannels();
         int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
 
-        this->leds(this->minLED, this->maxLED).fill_solid(this->getColorFromPalette(colorIndex));
+        this->leds(this->minLED, this->maxLED).fill_solid(this->getColorFromPalette(176));
     }
 
-    scaleLEDs(leds, this->maxBrightness);
+    this->scaleLEDs(this->maxBrightness);
 
     return;
 
@@ -64,27 +39,27 @@ int SimplePulse::squeezeChannelsToInt(int bass, int mid, int treb)
 
 }
 
-void SimplePulse::calcDampenFactor()
+void SimplePulse::adjustPulseBrightness()
 {
 
     int avg = 0;
-    for(int i = 0; i < 7; i++)
+    for(int i = 0; i < 2; i++)
     {
         avg += this->channels[i];
     }
-    avg = avg / 7;
+    avg = avg / 2;
 
     float newBrightness = avg / 1024.0;
 
-    this->maxBrightness *= 0.75;
+    this->maxBrightness *= 0.60;
 
     if (newBrightness > this->maxBrightness) {
         this->maxBrightness = newBrightness;
     }
 
-    if (this->maxBrightness < 0.1)
+    if (this->maxBrightness < 0.2)
     {
-        this->maxBrightness = 0.1;
+        this->maxBrightness = 0.2;
     }
 
     // Serial.println(this->maxBrightness);

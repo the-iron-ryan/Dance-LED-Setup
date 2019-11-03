@@ -43,6 +43,7 @@ class Changer
         void interpBetweenPixels(int minPix, int maxPix, CRGB firstColor, CRGB secondColor);
         int* squeezeToThreeChannels();
         CRGB getColorFromPalette(int colorIndex);
+        void scaleLEDs(float);
 
 };
 

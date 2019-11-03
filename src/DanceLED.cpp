@@ -6,6 +6,7 @@
 #include "SimplePulse.h"
 #include "MixBar.h"
 #include "Quadrant.h"
+#include "BassPush.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -107,14 +108,14 @@ long post_react = 0; // OLD SPIKE CONVERSION
 long tick = 0;
 
 // Time passed tracking
-#define TICKS_PER_EPOCH 1000
+#define TICKS_PER_EPOCH 250
 
 // Track epochs and preallocate random selectors.
 int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 4
+#define NUM_CHANGERS 5
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -141,7 +142,8 @@ void setup()
   changers[0] = new MixBar     (channels, leds, 230, NUM_LEDS);
   changers[1] = new PushThrough(channels, leds, 0,   NUM_LEDS);
   changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS);
-  changers[4] = new Quadrant   (channels, leds, 230, NUM_LEDS);
+  changers[3] = new Quadrant   (channels, leds, 230, NUM_LEDS);
+  changers[4] = new BassPush   (channels, leds, 0,   NUM_LEDS);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_HALLOWEEN_GEN;
@@ -149,6 +151,9 @@ void setup()
   palettes[2] = PAL_HALLOWEEN_PUMPKIN;
   palettes[3] = PAL_POINTY_PARTY;
   palettes[4] = PAL_RAINBOW;
+
+  // SEED GEN
+  randomSeed(millis());
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);

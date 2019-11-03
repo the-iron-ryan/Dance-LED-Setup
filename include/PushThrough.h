@@ -17,6 +17,7 @@ class PushThrough: public Changer
         void shiftPixDown(int speed);
 
         int squeezeChannelsToInt(int bass, int mid, int treb);
+        void adjustPulseBrightness();
 
         long ticks = 0;
 
