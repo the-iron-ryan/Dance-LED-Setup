@@ -70,3 +70,15 @@ CRGB Changer::getColorFromPalette(int colorIndex)
 {
     return ColorFromPalette(this->palette, colorIndex);
 }
+
+void Changer::scaleLEDs(float scale)
+{
+
+    for(CRGB & pixel : this->leds)
+    {
+        pixel.r = (uint8_t)(pixel.r * scale);
+        pixel.g = (uint8_t)(pixel.g * scale);
+        pixel.b = (uint8_t)(pixel.b * scale);
+    }
+
+}

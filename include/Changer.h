@@ -34,6 +34,8 @@ class Changer
         int minLED;
         int maxLED;
 
+        float maxBrightness = 1.0;
+
         CRGBPalette16 palette;
         
         void setAllPixInRange(int minPix, int maxPix, CRGB color);
@@ -41,6 +43,7 @@ class Changer
         void interpBetweenPixels(int minPix, int maxPix, CRGB firstColor, CRGB secondColor);
         int* squeezeToThreeChannels();
         CRGB getColorFromPalette(int colorIndex);
+        void scaleLEDs(float);
 
 };
 

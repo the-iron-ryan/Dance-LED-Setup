@@ -15,6 +15,7 @@ class SimplePulse: public Changer
     private:
 
         int squeezeChannelsToInt(int bass, int mid, int treb);
+        void adjustPulseBrightness();
 
 };
 
