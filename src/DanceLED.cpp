@@ -6,6 +6,7 @@
 #include "SimplePulse.h"
 #include "MixBar.h"
 #include "Quadrant.h"
+#include "SplitSpiral.h"
 
 // Arduino Music Visualizer 0.3
 
@@ -20,7 +21,7 @@
 // LED LIGHTING SETUP
 #define LED_PIN     7
 #define NUM_LEDS    1097
-#define BRIGHTNESS  10
+#define BRIGHTNESS  64
 #define LED_TYPE    NEOPIXEL
 #define COLOR_ORDER GRB
 CRGB realleds[NUM_LEDS];
@@ -32,6 +33,14 @@ DEFINE_GRADIENT_PALETTE( PAL_HEATMAP_TEST ) {
 128,   255,  0,  0,   //red
 224,   255,255,  0,   //bright yellow
 255,   255,255,255 }; //full white
+
+DEFINE_GRADIENT_PALETTE( PAL_QUAD_TEST ) {
+  0,   255,  0,  0,   // red
+ 62,   255,  0,  0,   // red
+125,     0,255,  0,   // green
+188,     0,  0,255,   // blue
+251,   255,255,  0,   // yellow
+255,   255,255,  0, };// yellow
 
 DEFINE_GRADIENT_PALETTE( PAL_HALLOWEEN_GEN ) {
   0,    0,    0,    0,
@@ -137,16 +146,17 @@ void setup()
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
 
+
   // CREATE CHANGER COLLECTION
-  changers[0] = new Quadrant(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new Quadrant(channels, leds, 230,   NUM_LEDS, PAL_RAINBOW);
+  changers[0] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  changers[1] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
   // changers[2] = new SimplePulse(channels, leds, 230, NUM_LEDS, PAL_HALLOWEEN_GHOUL);
 
   // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_HALLOWEEN_GEN;
-  palettes[1] = PAL_HALLOWEEN_GHOUL;
-  palettes[2] = PAL_HALLOWEEN_PUMPKIN;
-  palettes[3] = PAL_POINTY_PARTY;
+  palettes[0] = PAL_RAINBOW;
+  palettes[1] = PAL_RAINBOW;
+  palettes[2] = PAL_RAINBOW;
+  palettes[3] = PAL_HALLOWEEN_GHOUL;
   palettes[4] = PAL_RAINBOW;
 
   // SERIAL AND INPUT SETUP

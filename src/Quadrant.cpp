@@ -12,14 +12,8 @@ void Quadrant::step()
         int LEDIndex = (maxLED - 1) - i;
         double size = ledLen * (double)LEDIndex;
 
-        // Serial.println("Size: ");
-        // Serial.println(size);
-        // Serial.println("Max: ");
-        // Serial.println(quadIndexes[curQuadIndex]);
-        // Serial.println("");
-
         // Update quad index if greater than curent arc size
-        if (size > quadIndexes[curQuadIndex] && curQuadIndex < 15)
+        if (size > quadIndexes[curQuadIndex] && curQuadIndex < 16)
         {
             curQuadIndex++;
         }
@@ -39,11 +33,14 @@ void Quadrant::step()
                 quadFreqMaxes[index] = freqPercent;
             }
 
-            // Get percent value represented at this given turn of the spiral
-            double turnMaxPercent = (curQuadIndex / 4 + 1) * percentInc;
+            // Get percent value represented at this given turn of the spiralA
+            int scaleMult = (curQuadIndex / 4) + 1;
+            double turnMaxPercent = scaleMult * percentInc;
+            turnMaxPercent = min(1.0, turnMaxPercent);
             double val = turnMaxPercent - quadFreqMaxes[index];
 
-            uint8_t palIndex = ((index + 1) * 63) - 1;
+
+            uint8_t palIndex = (((index + 1) * 63) - 1);
             leds[i] = ColorFromPalette(palette, palIndex);
 
             if (val > 0.0)
@@ -55,6 +52,28 @@ void Quadrant::step()
 
                 uint8_t fadeAmt = (1.0 - percentFilled) * 255;
                 leds[i].fadeToBlackBy(fadeAmt);
+
+                // if (curQuadIndex == 14 || curQuadIndex == 13)
+                // {
+                //   Serial.println("Current LED: ");
+                //   Serial.println(i);
+                //   Serial.println("Quadrant: ");
+                //   Serial.println(index);
+                //   Serial.println("Sector: ");
+                //   Serial.println(curQuadIndex);
+                //   Serial.println("Turn Max %: ");
+                //   Serial.println(turnMaxPercent);
+                //   Serial.println("Freq Max:");
+                //   Serial.println(quadFreqMaxes[index]);
+                //   Serial.println("Cur Val: ");
+                //   Serial.println(val);
+                //   Serial.println("Percent filled: ");
+                //   Serial.println(percentFilled);
+                //   Serial.println("Cur fade: ");
+                //   Serial.println(fadeAmt);
+
+                //   Serial.println();
+                // }
             }
         }
   }
@@ -66,9 +85,9 @@ void Quadrant::step()
 void Quadrant::initArcLengths()
 {
   // Setup pi indexes using math science shit
-  for(int i = 0; i < 16; i++)
+  for(int i = 0; i < 17; i++)
   {
-    quadIndexes[i] = calcArcLen(0, i * (PI / 2.0f));
+    quadIndexes[i] = calcArcLen(0, ((double) i) * (PI / 2.0));
   }
 }
 
@@ -88,16 +107,16 @@ double Quadrant::calcArcLen(double thetaStrt, double thetaStop)
 void Quadrant::calcQuadFreqs()
 {
   quadFreqPercentage[0] = channels[0];
-  quadFreqPercentage[0] /= (1.0 * 1023.0);
+  quadFreqPercentage[0] /= (1023.0);
 
   quadFreqPercentage[1] = channels[1] + channels[2];
-  quadFreqPercentage[1] /= (2.0 * 1023.0);
+  quadFreqPercentage[1] /= (2 * 1023.0);
 
   quadFreqPercentage[2] = channels[3] + channels[4];
-  quadFreqPercentage[2] /= (2.0 * 1023.0);
+  quadFreqPercentage[2] /= (2 * 1023.0);
 
   quadFreqPercentage[3] = channels[5] + channels[6];
-  quadFreqPercentage[3] /= (2.0 * 1023.0);
+  quadFreqPercentage[3] /= (2 * 1023.0);
 }
 
 void Quadrant::reduce()
@@ -106,5 +125,8 @@ void Quadrant::reduce()
   {
     if(quadFreqMaxes[i] > 0)
       quadFreqMaxes[i] -= decayRate;
+    
+    if(quadFreqMaxes[i] < 0)
+      quadFreqMaxes[i] = 0;
   }
 }

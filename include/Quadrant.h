@@ -25,15 +25,15 @@ private:
     double C = 4.5;
 
     // Pi indexes
-    double quadIndexes[16];
+    double quadIndexes[17];
 
     double quadFreqPercentage[4];
     double quadFreqMaxes[4];
 
     double ledLen = 1.65;
-    double percentInc = 0.25;
+    double percentInc = 0.24;
 
     double decayRate = 0.35;
-    double greaterThresh = 0.10;
+    double greaterThresh = 0.1;
 };
 #endif
