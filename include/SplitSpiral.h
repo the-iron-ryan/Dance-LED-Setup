@@ -73,7 +73,7 @@ private:
     void initArcLengths()
     {
         // Setup pi indexes using math science shit
-        for (int i = 0; i < N*4 + 1; i++)
+        for (int i = 0; i < (N*4) + 1; i++)
         {
             quadIndexes[i] = calcArcLen(0, i * (2.0 * PI) / (double)N);
         }
@@ -121,6 +121,6 @@ private:
     double percentInc = 0.24;
 
     double decayRate = 0.15;
-    double greaterThresh = 0.1;
+    double greaterThresh = 0.0;
 };
 #endif

@@ -124,7 +124,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 5
+#define NUM_CHANGERS 2
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -149,17 +149,18 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new SplitSpiral<6>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new PushThrough   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
-  changers[2] = new BassPush      (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
-  changers[3] = new MixBar        (channels, leds, 230,   NUM_LEDS, PAL_RAINBOW);
-  changers[4] = new SimplePulse   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
+  changers[0] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  changers[1] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  // changers[1] = new PushThrough   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
+  // changers[2] = new BassPush      (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
+  // changers[3] = new MixBar        (channels, leds, 230,   NUM_LEDS, PAL_RAINBOW);
+  // changers[4] = new SimplePulse   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
 
-  changers[0] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[2] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[3] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[4] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[0] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[1] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[2] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[3] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[4] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
 
 
 
