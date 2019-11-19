@@ -94,6 +94,8 @@ private:
         {
             quadFreqPercentage[i] = channels[i];
             quadFreqPercentage[i] /= (1023.0);
+
+            quadFreqPercentage[i] = constrain(quadFreqPercentage[i], 0.0, 100.0);
         }
     }
     void reduce()
@@ -102,9 +104,6 @@ private:
         {
             if (quadFreqMaxes[i] > 0)
                 quadFreqMaxes[i] -= decayRate;
-
-            if (quadFreqMaxes[i] < 0)
-                quadFreqMaxes[i] = 0;
         }
     }
 
