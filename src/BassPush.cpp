@@ -3,7 +3,7 @@
 #include "BassPush.h"
 
 #define MIN_THRESHOLD 300
-#define LIGHT_DIM_INTERVAL 100
+#define LIGHT_DIM_INTERVAL 75
 #define THRESH_DIM_INTERVAL 45
 
 #define NUM_CHANNELS 1

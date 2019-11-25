@@ -146,7 +146,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 4
+#define NUM_CHANGERS 10
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -171,10 +171,16 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[2] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  changers[0] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  changers[1] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[2] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
   changers[3] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+  changers[4] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[5] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[6] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+  changers[7] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[8] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[9] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_MONOCHROME;
@@ -190,7 +196,7 @@ void setup()
   Serial.begin(9600);
 
   // RANDOM SEED
-  randomSeed(analogRead(0));
+  randomSeed(analogRead(LED_PIN));
 
   // BEGIN LOG
   Serial.println("\nListening...");
