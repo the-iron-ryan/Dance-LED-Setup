@@ -2,35 +2,34 @@
 #include "Changer.h"
 #include "BassPush.h"
 
-#define BASS_PROPORTION 1.0
-#define MID_PROPORTION 0.0
-#define TREB_PROPORTION 0.0
+#define MIN_THRESHOLD 300
+#define LIGHT_DIM_INTERVAL 100
+#define THRESH_DIM_INTERVAL 45
 
-#define PUSH_SPEED 8
+#define NUM_CHANNELS 1
+#define PUSH_SPEED 10
+#define CORE_LENGTH 250
 
 void BassPush::step() {
 
-    CRGB newColor = this->leds[this->maxLED];
+    int maxChannel = getMaxChannel();
 
-    int ogBrightness = this->maxBrightness;
-    this->adjustPulseBrightness();
-    
-    if (ogBrightness < this->maxBrightness)
-    {
-        int* threeChannel = this->squeezeToThreeChannels();
-        int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
+    setPulseColor(maxChannel);
 
-        newColor = this->getColorFromPalette(colorIndex);
-    }
+    CRGB scaled = scalePulseBrightness(brightnessScalar / 1024.0);
 
-    newColor.r *= maxBrightness;
-    newColor.g *= maxBrightness;
-    newColor.b *= maxBrightness;
-    
+//    Serial.print(scaled.r);
+//    Serial.print('\t');
+//    Serial.print(scaled.g);
+//    Serial.print('\t');
+//    Serial.print(scaled.b);
+//    Serial.println();
+
+//    leds(minLED, maxLED) = scaled;
 
     this->shiftPixDown(PUSH_SPEED);
 
-    leds[this->maxLED] = newColor;
+    leds(maxLED - CORE_LENGTH, maxLED) = scaled;
 
     return;
 
@@ -60,34 +59,80 @@ void BassPush::shiftPixDown(int speed)
 
 }
 
-int BassPush::squeezeChannelsToInt(int bass, int mid, int treb)
+int BassPush::getMaxChannel()
 {
+    int max = 0;
+    int maxChannel = 0;
 
-    int bassProp = (int)(bass * BASS_PROPORTION);
-    int midProp  = (int)(mid  * MID_PROPORTION);
-    int trebProp = (int)(treb * TREB_PROPORTION);
+    for (int i = 0; i < NUM_CHANNELS; i++)
+    {
+        if (channels[i] > max)
+        {
+            max = channels[i];
+            maxChannel = i;
+        }
+    }
 
-    return bassProp + midProp + trebProp;
+    return maxChannel;
 
 }
 
-void BassPush::adjustPulseBrightness()
+CRGB BassPush::getColorFromPaletteWeight()
 {
+    int weightedSum = 0;
 
-    int avg = 0;
-    for(int i = 0; i < 2; i++)
+    for (int i = 0; i < 7; i++)
     {
-        avg += this->channels[i];
+        weightedSum += channels[i] * (i + 1);
     }
-    avg = avg / 2;
-    
-    if (avg > 800)
+
+    float weightedAvgChannel = weightedSum / (NUM_CHANNELS + 1);
+
+    int paletteIndex = int(weightedAvgChannel * 255);
+
+    return getColorFromPalette(paletteIndex);
+
+}
+
+void BassPush::setPulseColor(int maxChannel)
+{
+    int maxAmplitude = channels[maxChannel];
+
+    if (maxAmplitude > threshold)
     {
-        this->maxBrightness = 1.0;
+        threshold = maxAmplitude;
+        brightnessScalar = maxAmplitude;
+        pulseColor = getColorFromPaletteWeight();
+    }
+    else if (maxAmplitude > MIN_THRESHOLD)
+    {
+        threshold -= THRESH_DIM_INTERVAL;
+        brightnessScalar -= LIGHT_DIM_INTERVAL;
+
+        if (threshold < 0)
+        {
+            threshold = 0;
+        }
+
+        if (brightnessScalar < 0)
+        {
+            brightnessScalar = 0;
+        }
+
     }
     else
     {
-        this->maxBrightness = 0;
+        pulseColor = CRGB::Black;
     }
+}
 
+CRGB BassPush::scalePulseBrightness(float scale)
+{
+    CRGB scaled = CRGB(
+        uint16_t(pulseColor.r * scale),
+        uint16_t(pulseColor.g * scale),
+        uint16_t(pulseColor.b * scale)
+    );
+
+    return scaled;
 }
