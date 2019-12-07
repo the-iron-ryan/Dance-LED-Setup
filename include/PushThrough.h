@@ -16,10 +16,17 @@ class PushThrough: public Changer
 
         void shiftPixDown(int speed);
 
-        int squeezeChannelsToInt(int bass, int mid, int treb);
-        void adjustPulseBrightness();
-
         long ticks = 0;
+
+        int getMaxChannel();
+        CRGB getColorFromPaletteWeight();
+
+        void setPulseColor(int maxChannel);
+        CRGB pulseColor = CRGB::Black;
+        CRGB scalePulseBrightness(float scale);
+
+        int threshold = 0;
+        int brightnessScalar = 0;
 
 };
 

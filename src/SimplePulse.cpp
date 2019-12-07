@@ -2,66 +2,108 @@
 #include "Changer.h"
 #include "SimplePulse.h"
 
-#define BASS_PROPORTION 0.25
-#define MID_PROPORTION 0.25
-#define TREB_PROPORTION 0.50
+#define MIN_THRESHOLD 300
+#define LIGHT_DIM_INTERVAL 100
+#define THRESH_DIM_INTERVAL 10
 
+#define NUM_CHANNELS 1
 
 void SimplePulse::step() {
 
-    this->leds(0, this->minLED).fill_solid(CRGB::Black);
+    int maxChannel = getMaxChannel();
 
-    int ogBrightness = this->maxBrightness;
-    this->adjustPulseBrightness();
-    
-    if (ogBrightness < this->maxBrightness)
-    {
-        int* threeChannel = this->squeezeToThreeChannels();
-        int colorIndex = this->squeezeChannelsToInt(threeChannel[0], threeChannel[1], threeChannel[2]);
+    setPulseColor(maxChannel);
 
-        this->leds(this->minLED, this->maxLED).fill_solid(this->getColorFromPalette(176));
-    }
+    CRGB scaled = scalePulseBrightness(brightnessScalar / 1024.0);
 
-    this->scaleLEDs(this->maxBrightness);
+//    Serial.print(scaled.r);
+//    Serial.print('\t');
+//    Serial.print(scaled.g);
+//    Serial.print('\t');
+//    Serial.print(scaled.b);
+//    Serial.println();
+
+    leds(0, minLED) = CRGB::Black;
+    leds(minLED, maxLED) = scaled;
 
     return;
 
 }
 
-int SimplePulse::squeezeChannelsToInt(int bass, int mid, int treb)
+int SimplePulse::getMaxChannel()
 {
+    int max = 0;
+    int maxChannel = 0;
 
-    int bassProp = (int)(bass * BASS_PROPORTION);
-    int midProp  = (int)(mid  * MID_PROPORTION);
-    int trebProp = (int)(treb * TREB_PROPORTION);
+    for (int i = 0; i < 7; i++)
+    {
+        if (channels[i] > max)
+        {
+            max = channels[i];
+            maxChannel = i;
+        }
+    }
 
-    return bassProp + midProp + trebProp;
+    return maxChannel;
 
 }
 
-void SimplePulse::adjustPulseBrightness()
+CRGB SimplePulse::getColorFromPaletteWeight()
 {
+    int weightedSum = 0;
 
-    int avg = 0;
-    for(int i = 0; i < 2; i++)
+    for (int i = 0; i < NUM_CHANNELS; i++)
     {
-        avg += this->channels[i];
-    }
-    avg = avg / 2;
-
-    float newBrightness = avg / 1024.0;
-
-    this->maxBrightness *= 0.60;
-
-    if (newBrightness > this->maxBrightness) {
-        this->maxBrightness = newBrightness;
+        weightedSum += channels[i] * (i + 1);
     }
 
-    if (this->maxBrightness < 0.2)
+    float weightedAvgChannel = weightedSum / (NUM_CHANNELS + 1);
+
+    int paletteIndex = int(weightedAvgChannel * 255);
+
+    return getColorFromPalette(paletteIndex);
+
+}
+
+void SimplePulse::setPulseColor(int maxChannel)
+{
+    int maxAmplitude = channels[maxChannel];
+
+    if (maxAmplitude > threshold)
     {
-        this->maxBrightness = 0.2;
+        threshold = maxAmplitude;
+        brightnessScalar = maxAmplitude;
+        pulseColor = getColorFromPaletteWeight();
     }
+    else if (maxAmplitude > MIN_THRESHOLD)
+    {
+        threshold -= THRESH_DIM_INTERVAL;
+        brightnessScalar -= LIGHT_DIM_INTERVAL;
 
-    // Serial.println(this->maxBrightness);
+        if (threshold < 0)
+        {
+            threshold = 0;
+        }
 
+        if (brightnessScalar < 0)
+        {
+            brightnessScalar = 0;
+        }
+
+    }
+    else
+    {
+        pulseColor = CRGB::Black;
+    }
+}
+
+CRGB SimplePulse::scalePulseBrightness(float scale)
+{
+    CRGB scaled = CRGB(
+        uint16_t(pulseColor.r * scale),
+        uint16_t(pulseColor.g * scale),
+        uint16_t(pulseColor.b * scale)
+    );
+
+    return scaled;
 }

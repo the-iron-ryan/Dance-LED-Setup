@@ -14,8 +14,15 @@ class SimplePulse: public Changer
 
     private:
 
-        int squeezeChannelsToInt(int bass, int mid, int treb);
-        void adjustPulseBrightness();
+        int getMaxChannel();
+        CRGB getColorFromPaletteWeight();
+
+        void setPulseColor(int maxChannel);
+        CRGB pulseColor = CRGB::Black;
+        CRGB scalePulseBrightness(float scale);
+
+        int threshold = 0;
+        int brightnessScalar = 0;
 
 };
 

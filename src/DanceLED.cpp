@@ -78,7 +78,6 @@ DEFINE_GRADIENT_PALETTE( PAL_POINTY_PARTY ) {
 };
 
 DEFINE_GRADIENT_PALETTE( PAL_RAINBOW ) {
-  0,    0,    0,    0,    // black
   10,   209,  0,    0,    // r
   50,   255,  102,  32,   // o
   100,   255,  213,  33,   // y
@@ -88,7 +87,30 @@ DEFINE_GRADIENT_PALETTE( PAL_RAINBOW ) {
   255,   51,   0,    68,   // v
 };
 
-#define NUM_PALETTES 5
+DEFINE_GRADIENT_PALETTE( PAL_MAGMA ) {
+	0,		48,		11,		102,		// Deep Violet
+	50,		132,	32,		130,		// Maximum Purple
+	125,	199,	57,		116,		// Fuchsia Rose
+	175,	254,	138,	92,			// Coral
+	255,	252,	252,	186,		// Very Pale Yellow
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_FOREST ) {
+	0,		11,		102,	15,		// Deep Green
+	50,		9,		155,	106,	// Green (NCS)
+	125,	33,		198,	190,	// Maxmimum Blue-Green
+	175,	59,		134,	191,	// Cyan-Blue Azure
+	255,	164,	165,	191,	// Blue Bell
+};
+
+DEFINE_GRADIENT_PALETTE( PAL_MONOCHROME )
+{
+  0,    1,    1,    1,    // Black
+  230,  127,  127,  127,  // Grey
+  255,  255,  255,  255,    // White
+};
+
+#define NUM_PALETTES 8
 CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
@@ -124,7 +146,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 2
+#define NUM_CHANGERS 10
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -150,30 +172,33 @@ void setup()
 
   // CREATE CHANGER COLLECTION
   changers[0] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
-  // changers[1] = new PushThrough   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
-  // changers[2] = new BassPush      (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
-  // changers[3] = new MixBar        (channels, leds, 230,   NUM_LEDS, PAL_RAINBOW);
-  // changers[4] = new SimplePulse   (channels, leds, 0,   NUM_LEDS, PAL_RAINBOW);
-
-  // changers[0] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  // changers[1] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  // changers[2] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  // changers[3] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  // changers[4] = new PushThrough   (channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-
-
-
+  changers[1] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[2] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[3] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+  changers[4] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[5] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[6] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+  changers[7] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[8] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  changers[9] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
 
   // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_RAINBOW;
-  palettes[1] = PAL_RAINBOW;
-  palettes[2] = PAL_RAINBOW;
-  palettes[3] = PAL_HALLOWEEN_GHOUL;
-  palettes[4] = PAL_RAINBOW;
+  palettes[0] = PAL_MONOCHROME;
+  palettes[1] = PAL_HALLOWEEN_GEN;
+  palettes[2] = PAL_HALLOWEEN_GHOUL;
+  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
+  palettes[4] = PAL_POINTY_PARTY;
+	palettes[5] = PAL_MAGMA;
+  palettes[6] = PAL_FOREST;
+  palettes[7] = PAL_RAINBOW;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
+
+  // RANDOM SEED
+  randomSeed(analogRead(LED_PIN));
+
+  // BEGIN LOG
   Serial.println("\nListening...");
 }
 
@@ -243,6 +268,14 @@ void startNewEpoch()
 {
   currentChanger = random(NUM_CHANGERS);
   currentPalette = random(NUM_PALETTES);
+
+  Serial.println("\nEPOCH:");
+
+  Serial.print("Changer:\t");
+  Serial.println(currentChanger);
+
+  Serial.print("Palette:\t");
+  Serial.println(currentPalette);
 
   changers[currentChanger]->setPalette(palettes[currentPalette]);
 }
