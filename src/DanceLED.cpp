@@ -146,7 +146,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 10
+#define NUM_CHANGERS 12
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -181,6 +181,8 @@ void setup()
   changers[7] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
   changers[8] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
   changers[9] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+  changers[10] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
+  changers[11] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_MONOCHROME;

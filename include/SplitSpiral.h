@@ -16,16 +16,18 @@ public:
     {
         calcQuadFreqs();
 
-        int curQuadIndex = 0;
+        // Represents the part of the spiral we're in (0 - N)
+        int curSectorIndex = 0;
+
         for (int i = maxLED - 1; i > 0; i--)
         {
             int LEDIndex = (maxLED - 1) - i;
-            double size = ledLen * (double)LEDIndex; 
+            float size = ledLen * (float)LEDIndex; 
 
-            // Update quad index if greater than curent arc size
-            if (size > quadIndexes[curQuadIndex] && curQuadIndex < N*4)
+            // Update spiral index if greater than curent arc size
+            if (size > spiralSectorIndexes[curSectorIndex] && curSectorIndex < N*4)
             {
-                curQuadIndex++;
+                curSectorIndex++;
             }
 
             if (i < minLED)
@@ -34,31 +36,32 @@ public:
             }
             else
             {
-                int index = curQuadIndex % N;
-                double freqPercent = quadFreqPercentage[index];
+                // Represents which section we're currently inside of (0 - N)
+                int spiralSectionIndex = curSectorIndex % N;
+                float freqPercent = sectionFreqPercentage[spiralSectionIndex];
 
                 // Are we greater than last value? If so, set it
-                if (freqPercent > (quadFreqMaxes[index] + greaterThresh))
+                if (freqPercent > (sectionFreqMaxes[spiralSectionIndex] + greaterThresh))
                 {
-                    quadFreqMaxes[index] = freqPercent;
+                    sectionFreqMaxes[spiralSectionIndex] = freqPercent;
                 }
 
                 // Get percent value represented at this given turn of the spiralA
-                int scaleMult = (curQuadIndex / N) + 1;
-                double turnMaxPercent = scaleMult * percentInc;
+                int scaleMult = (curSectorIndex / N) + 1;
+                float turnMaxPercent = scaleMult * percentInc;
                 turnMaxPercent = min(1.0, turnMaxPercent);
-                double val = turnMaxPercent - quadFreqMaxes[index];
+                float val = turnMaxPercent - sectionFreqMaxes[spiralSectionIndex];
 
                 int increment = (255/N);
-                uint8_t palIndex = ((index + 1) * increment) - 1;
+                uint8_t palIndex = ((spiralSectionIndex + 1) * increment) - 1;
                 leds[i] = ColorFromPalette(palette, palIndex);
 
                 if (val > 0.0)
                 {
                     // Cap value at percent min, done so that we zero out channels
                     val = min(percentInc, val);
-                    double relAmt = percentInc - val;
-                    double percentFilled = relAmt / percentInc;
+                    float relAmt = percentInc - val;
+                    float percentFilled = relAmt / percentInc;
 
                     uint8_t fadeAmt = (1.0 - percentFilled) * 255;
                     leds[i].fadeToBlackBy(fadeAmt);
@@ -75,14 +78,14 @@ private:
         // Setup pi indexes using math science shit
         for (int i = 0; i < (N*4) + 1; i++)
         {
-            quadIndexes[i] = calcArcLen(0, i * (2.0 * PI) / (double)N);
+            spiralSectorIndexes[i] = calcArcLen(0, i * (2.0 * PI) / (float)N);
         }
     }
-    double arsinh(double x)
+    float arsinh(float x)
     {
         return log(x + sqrt(pow(x, 2) + 1));
     }
-    double calcArcLen(double thetaStrt, double thetaStop)
+    float calcArcLen(float thetaStrt, float thetaStop)
     {
         // Arc length of spiral, by taking End Length - Start Length
         return (C * ( (arsinh(thetaStop) / 2) + ( (thetaStop * sqrt( pow(thetaStop, 2) + 1 )) / 2 ) ) )
@@ -92,34 +95,33 @@ private:
     {
         for (int i = 0; i < N; i++)
         {
-            quadFreqPercentage[i] = channels[i];
-            quadFreqPercentage[i] /= (1023.0);
-
-            quadFreqPercentage[i] = constrain(quadFreqPercentage[i], 0.0, 100.0);
+            channels[i] = constrain(channels[i], 0, 1023);
+            sectionFreqPercentage[i] = (float) channels[i] / 1023.0;
+            sectionFreqPercentage[i] = constrain(sectionFreqPercentage[i], 0.0, 1.0);
         }
     }
     void reduce()
     {
         for (int i = 0; i < N; i++)
         {
-            if (quadFreqMaxes[i] > 0)
-                quadFreqMaxes[i] -= decayRate;
+            if (sectionFreqMaxes[i] > 0.0)
+                sectionFreqMaxes[i] -= decayRate;
         }
     }
 
     // r = C * theta (equation for spiral)
-    double C = 4.5;
+    float C = 4.5;
 
     // Pi indexes
-    double quadIndexes[(N * 4) + 1];
+    float spiralSectorIndexes[(N * 4) + 1];
 
-    double quadFreqPercentage[N];
-    double quadFreqMaxes[N];
+    float sectionFreqPercentage[N];
+    float sectionFreqMaxes[N];
 
-    double ledLen = 1.65;
-    double percentInc = 0.24;
+    float ledLen = 1.65;
+    float percentInc = 0.24;
 
-    double decayRate = 0.15;
-    double greaterThresh = 0.0;
+    float decayRate = 0.15;
+    float greaterThresh = 0.0;
 };
 #endif
