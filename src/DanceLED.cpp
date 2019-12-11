@@ -129,7 +129,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 0
+#define NUM_CHANGERS 1
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -147,7 +147,7 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  // changers[0] = new PushThrough(leds);
+  changers[0] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_MONOCHROME;
@@ -226,13 +226,13 @@ void loop()
   // Update channel info
   data->update();
 
-//  if (data->ticks % TICKS_PER_EPOCH == 0)
-//  {
-//    startNewEpoch();
-//  }
+  if (data->ticks % TICKS_PER_EPOCH == 0)
+  {
+    startNewEpoch();
+  }
 
-//  changers[currentChanger]->step();
-  data->current().log();
+  changers[currentChanger]->step();
+// data->current().log();
 
   FastLED.show();
 
