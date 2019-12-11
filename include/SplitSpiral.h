@@ -119,7 +119,7 @@ private:
     double ledLen = 1.65;
     double percentInc = 0.24;
 
-    double decayRate = 0.15;
+    double decayRate = 0.50;
     double greaterThresh = 0.0;
 };
 #endif

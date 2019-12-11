@@ -1,5 +1,6 @@
 #include <FastLED.h>
 
+#include "MusicData.h"
 #include "PushThrough.h"
 #include "Changer.h"
 #include "Rainbow.h"
@@ -114,32 +115,14 @@ DEFINE_GRADIENT_PALETTE( PAL_MONOCHROME )
 CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
-int strobe = 4;
-int reset = 5;
-int audio1 = A0;
-int audio2 = A1;
-int left[7];
-int right[7];
-int channels[7];
-int band;
-int audio_input = 0;
-int freq = 0;
-
-// STANDARD VISUALIZER VARIABLES
-int midway = NUM_LEDS / 2; // CENTER MARK FROM DOUBLE LEVEL VISUALIZER
-int loop_max = 0;
-int k = 255; // COLOR WHEEL POSITION
-int decay = 0; // HOW MANY MS BEFORE ONE LIGHT DECAY
-int decay_check = 0;
-long pre_react = 0; // NEW SPIKE CONVERSION
-long react = 0; // NUMBER OF LEDs BEING LIT
-long post_react = 0; // OLD SPIKE CONVERSION
+MusicData* data = MusicData::instance();
+MusicFrame testFrame = MusicFrame(0);
 
 // Current tick
 long tick = 0;
 
 // Time passed tracking
-#define TICKS_PER_EPOCH 1000
+#define TICKS_PER_EPOCH 500
 
 // Track epochs and preallocate random selectors.
 int currentChanger;
@@ -151,13 +134,6 @@ Changer* changers[NUM_CHANGERS];
 
 void setup()
 {
-  // SPECTRUM SETUP
-  pinMode(audio1, INPUT);
-  pinMode(audio2, INPUT);
-  pinMode(strobe, OUTPUT);
-  pinMode(reset, OUTPUT);
-  digitalWrite(reset, LOW);
-  digitalWrite(strobe, HIGH);
   
   // LED LIGHTING SETUP
   delay( 3000 ); // power-up safety delay
@@ -171,26 +147,17 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new SplitSpiral<7>(channels, leds, 230, NUM_LEDS, PAL_RAINBOW);
-  changers[1] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[2] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[3] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
-  changers[4] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[5] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[6] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
-  changers[7] = new BassPush(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[8] = new PushThrough(channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
-  changers[9] = new SimplePulse(channels, leds, NUM_LEDS / 2, NUM_LEDS, PAL_RAINBOW);
+//  changers[0] = new PushThrough(data.currentFrame().channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
 
   // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_MONOCHROME;
-  palettes[1] = PAL_HALLOWEEN_GEN;
-  palettes[2] = PAL_HALLOWEEN_GHOUL;
-  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
-  palettes[4] = PAL_POINTY_PARTY;
-	palettes[5] = PAL_MAGMA;
-  palettes[6] = PAL_FOREST;
-  palettes[7] = PAL_RAINBOW;
+//  palettes[0] = PAL_MONOCHROME;
+//  palettes[1] = PAL_HALLOWEEN_GEN;
+//  palettes[2] = PAL_HALLOWEEN_GHOUL;
+//  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
+//  palettes[4] = PAL_POINTY_PARTY;
+//	palettes[5] = PAL_MAGMA;
+//  palettes[6] = PAL_FOREST;
+//  palettes[7] = PAL_RAINBOW;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -202,21 +169,6 @@ void setup()
   Serial.println("\nListening...");
 }
 
-void readMSGEQ7()
-// Function to read 7 band equalizers
-{
-  digitalWrite(reset, HIGH);
-  digitalWrite(reset, LOW);
-  for(band=0; band <7; band++)
-  {
-    digitalWrite(strobe, LOW); // strobe pin on the shield - kicks the IC up to the next band 
-    delayMicroseconds(30); // 
-    left[band] = analogRead(audio1); // store left band reading
-    right[band] = analogRead(audio2); // ... and the right
-    channels[band] = max(left[band], right[band]); // Add the maximum between the two as that channel output
-    digitalWrite(strobe, HIGH); 
-  }
-}
 
 
 // Gets the current epoch, according to the number of ticks
@@ -246,36 +198,24 @@ void printCLED(int index)
   Serial.println();
 }
 
-void printChannels()
-{
-  Serial.print(left[0]);
-  Serial.print('\t');
-  Serial.print(left[1]);
-  Serial.print('\t');
-  Serial.print(left[2]);
-  Serial.print('\t');
-  Serial.print(left[3]);
-  Serial.print('\t');
-  Serial.print(left[4]);
-  Serial.print('\t');
-  Serial.print(left[5]);
-  Serial.print('\t');
-  Serial.print(left[6]);
-  Serial.println();
-}
-
 void startNewEpoch()
 {
   currentChanger = random(NUM_CHANGERS);
   currentPalette = random(NUM_PALETTES);
 
-  Serial.println("\nEPOCH:");
+//  Serial.println("\nEPOCH:");
+//
+//  Serial.print("Changer:\t");
+//  Serial.println(currentChanger);
+//
+//  Serial.print("Palette:\t");
+//  Serial.println(currentPalette);
 
-  Serial.print("Changer:\t");
-  Serial.println(currentChanger);
-
-  Serial.print("Palette:\t");
-  Serial.println(currentPalette);
+    Serial.print(millis());
+    Serial.print(',');
+    Serial.print(TICKS_PER_EPOCH);
+    Serial.print(',');
+    Serial.println(currentChanger);
 
   changers[currentChanger]->setPalette(palettes[currentPalette]);
 }
@@ -284,19 +224,9 @@ void loop()
 {  
 
   // Update channel info
-  readMSGEQ7();
+  data->update();
 
-  if (tick % TICKS_PER_EPOCH == 0)
-  {
-    startNewEpoch();
-  }
-
-  // Iterate whichever changer corresponds to the current epoch
-  changers[currentChanger]->step();
-
-  //printLED(leds, NUM_LEDS);
-  //printCLED(NUM_LEDS);
-  //printChannels();
+  data->at(0).log();
 
   FastLED.show();
 

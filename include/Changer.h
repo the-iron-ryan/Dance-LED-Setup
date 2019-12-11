@@ -2,7 +2,6 @@
 #define BASECHANGER_H
 
 #include <FastLED.h>
-#include "Palettes.h"
 
 class Changer
 {
