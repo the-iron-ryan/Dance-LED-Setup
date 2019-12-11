@@ -28,7 +28,7 @@ void PushThrough::step() {
 
     this->shiftPixDown(PUSH_SPEED);
 
-    leds(maxLED - CORE_LENGTH, maxLED) = scaled;
+    leds(leds.len - CORE_LENGTH, leds.len) = scaled;
 
     return;
 
@@ -42,13 +42,13 @@ void PushThrough::shiftPixDown(int speed)
     int offset = this->ticks % speed;
     this->ticks++;
 
-    for (int i = this->minLED + offset; i < this->maxLED; i += speed)
+    for (int i = offset; i < leds.len; i += speed)
     {
 
         next = i + speed;
-        if (next >= this->maxLED)
+        if (next >= leds.len)
         {
-            next = maxLED - 1;
+            next = leds.len - 1;
         }
         nextColor = leds[next + 1];
 
@@ -65,9 +65,9 @@ int PushThrough::getMaxChannel()
 
     for (int i = 0; i < 7; i++)
     {
-        if (channels[i] > max)
+        if (music->current().channels[i] > max)
         {
-            max = channels[i];
+            max = music->current().channels[i];
             maxChannel = i;
         }
     }
@@ -82,7 +82,7 @@ CRGB PushThrough::getColorFromPaletteWeight()
 
     for (int i = 0; i < 7; i++)
     {
-        weightedSum += channels[i] * (i + 1);
+        weightedSum += music->current().channels[i] * (i + 1);
     }
 
     float weightedAvgChannel = weightedSum / 8;
@@ -95,7 +95,7 @@ CRGB PushThrough::getColorFromPaletteWeight()
 
 void PushThrough::setPulseColor(int maxChannel)
 {
-    int maxAmplitude = channels[maxChannel];
+    int maxAmplitude = music->current().channels[maxChannel];
 
     if (maxAmplitude > threshold)
     {

@@ -129,7 +129,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 10
+#define NUM_CHANGERS 0
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -147,17 +147,17 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-//  changers[0] = new PushThrough(data.currentFrame().channels, leds, 0, NUM_LEDS, PAL_RAINBOW);
+  // changers[0] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION
-//  palettes[0] = PAL_MONOCHROME;
-//  palettes[1] = PAL_HALLOWEEN_GEN;
-//  palettes[2] = PAL_HALLOWEEN_GHOUL;
-//  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
-//  palettes[4] = PAL_POINTY_PARTY;
-//	palettes[5] = PAL_MAGMA;
-//  palettes[6] = PAL_FOREST;
-//  palettes[7] = PAL_RAINBOW;
+  palettes[0] = PAL_MONOCHROME;
+  palettes[1] = PAL_HALLOWEEN_GEN;
+  palettes[2] = PAL_HALLOWEEN_GHOUL;
+  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
+  palettes[4] = PAL_POINTY_PARTY;
+	palettes[5] = PAL_MAGMA;
+  palettes[6] = PAL_FOREST;
+  palettes[7] = PAL_RAINBOW;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -226,7 +226,13 @@ void loop()
   // Update channel info
   data->update();
 
-  data->at(0).log();
+//  if (data->ticks % TICKS_PER_EPOCH == 0)
+//  {
+//    startNewEpoch();
+//  }
+
+//  changers[currentChanger]->step();
+  data->current().log();
 
   FastLED.show();
 

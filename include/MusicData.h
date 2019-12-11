@@ -61,6 +61,11 @@ public:
         return this->at(i);
     }
 
+    const MusicFrame& current()
+    {
+        return this->at(0);
+    }
+
 private:
 
 
