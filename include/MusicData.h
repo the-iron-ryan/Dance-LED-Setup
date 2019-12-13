@@ -13,7 +13,7 @@ public:
 
     static const int FRAME_QUEUE_SIZE = 100;
 
-    long ticks = 0;
+    const long& ticks = m_ticks;
 
     void update();
     MusicData& operator++(int n)
@@ -43,6 +43,8 @@ private:
 
 
     static MusicData* m_instance;
+
+    long m_ticks = 0;
 
     MusicData();
 

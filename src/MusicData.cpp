@@ -28,6 +28,6 @@ MusicData::MusicData()
 
 void MusicData::update()
 {
-    ticks++;
+    m_ticks++;
     m_frameBuffer.push(MusicFrame(ticks));
 }
