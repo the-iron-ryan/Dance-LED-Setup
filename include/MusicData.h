@@ -37,6 +37,8 @@ public:
         return this->at(0);
     }
 
+    void analyze();
+
 private:
 
 
