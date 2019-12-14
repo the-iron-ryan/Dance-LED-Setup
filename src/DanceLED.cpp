@@ -232,10 +232,9 @@ void loop()
   }
 
   changers[currentChanger]->step();
+  Serial.println(data->refreshRate);
 // data->current().log();
 
   FastLED.show();
-
-  tick++;
 
 }

@@ -31,3 +31,8 @@ void MusicData::update()
     m_ticks++;
     m_frameBuffer.push(MusicFrame(ticks));
 }
+
+void MusicData::analyze()
+{
+    m_refreshRate = -2;
+}
