@@ -97,15 +97,28 @@ private:
         {
             channels[i] = constrain(channels[i], 0, 1023);
             sectionFreqPercentage[i] = (float) channels[i] / 1023.0;
+            sectionFreqPercentage[i] *= 1.25;
             sectionFreqPercentage[i] = constrain(sectionFreqPercentage[i], 0.0, 1.0);
         }
     }
     void reduce()
     {
+
         for (int i = 0; i < N; i++)
         {
+
             if (sectionFreqMaxes[i] > 0.0)
                 sectionFreqMaxes[i] -= decayRate;
+
+            if (sectionFreqMaxes[i] > 1.0)
+            {
+                sectionFreqMaxes[i] = 0;
+            }
+            else if (sectionFreqMaxes[i] < 0)
+            {
+                sectionFreqMaxes[i] = 0.0;
+            }
+
         }
     }
 
@@ -121,7 +134,7 @@ private:
     float ledLen = 1.65;
     float percentInc = 0.24;
 
-    float decayRate = 0.15;
+    float decayRate = 0.33;
     float greaterThresh = 0.0;
 };
 #endif
