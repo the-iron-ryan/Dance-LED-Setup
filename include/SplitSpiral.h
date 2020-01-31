@@ -4,6 +4,12 @@
 #include "Changer.h"
 #include <FastLED.h>
 
+#define MAX_LAYERS 16
+
+#define MIN_INTENSITY 100
+#define DIMINISH_RATE 40
+#define SMOOTH_POLYNOMIAL_DEGREE 2
+
 
 template<int N>
 class SplitSpiral : public Changer
@@ -14,127 +20,185 @@ public:
 
     virtual void step()
     {
-        calcQuadFreqs();
 
-        // Represents the part of the spiral we're in (0 - N)
-        int curSectorIndex = 0;
+        counter++;
 
-        for (int i = maxLED - 1; i > 0; i--)
+        leds(0, maxLED) = CRGB::Black;
+
+        for (int wedge = 0; wedge < N; wedge++)
         {
-            int LEDIndex = (maxLED - 1) - i;
-            float size = ledLen * (float)LEDIndex; 
 
-            // Update spiral index if greater than curent arc size
-            if (size > spiralSectorIndexes[curSectorIndex] && curSectorIndex < N*4)
+            if (thresholds[wedge] < channels[wedge])
             {
-                curSectorIndex++;
+                thresholds[wedge] = channels[wedge];
             }
-
-            if (i < minLED)
+            else if (thresholds[wedge] > MIN_INTENSITY)
             {
-                leds[i] = CRGB::Black;
+                thresholds[wedge] -= DIMINISH_RATE;
             }
-            else
-            {
-                // Represents which section we're currently inside of (0 - N)
-                int spiralSectionIndex = curSectorIndex % N;
-                float freqPercent = sectionFreqPercentage[spiralSectionIndex];
+            
+            CRGB color = getColorFromPalette((256 / N) * wedge);
+            float intensity = (thresholds[wedge] - MIN_INTENSITY)
+                            / (1023.00         - MIN_INTENSITY);
 
-                // Are we greater than last value? If so, set it
-                if (freqPercent > (sectionFreqMaxes[spiralSectionIndex] + greaterThresh))
-                {
-                    sectionFreqMaxes[spiralSectionIndex] = freqPercent;
-                }
+            applyColorToWedge(wedge, color, intensity);
 
-                // Get percent value represented at this given turn of the spiralA
-                int scaleMult = (curSectorIndex / N) + 1;
-                float turnMaxPercent = scaleMult * percentInc;
-                turnMaxPercent = min(1.0, turnMaxPercent);
-                float val = turnMaxPercent - sectionFreqMaxes[spiralSectionIndex];
-
-                int increment = (255/N);
-                uint8_t palIndex = ((spiralSectionIndex + 1) * increment) - 1;
-                leds[i] = ColorFromPalette(palette, palIndex);
-
-                if (val > 0.0)
-                {
-                    // Cap value at percent min, done so that we zero out channels
-                    val = min(percentInc, val);
-                    float relAmt = percentInc - val;
-                    float percentFilled = relAmt / percentInc;
-
-                    uint8_t fadeAmt = (1.0 - percentFilled) * 255;
-                    leds[i].fadeToBlackBy(fadeAmt);
-                }
-            }
         }
 
-        // reduce max values
-        reduce();
     }
 private:
+
     void initArcLengths()
     {
+
         // Setup pi indexes using math science shit
-        for (int i = 0; i < (N*4) + 1; i++)
+        // - Ryan Dougherty, #1 software partner
+
+        for (int i = 0; i < N; i++)
         {
-            spiralSectorIndexes[i] = calcArcLen(0, i * (2.0 * PI) / (float)N);
+            for (int j = 0; j < MAX_LAYERS; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    channelArcs[i][j][k] = 0;
+                }
+            }
         }
+
+        int currentLED = 0;
+        int nextLED    = 0;
+
+        float currentAngle = 0;
+
+        int currentSection = 0;
+        int currentLayer = 0;
+
+        while (currentLED <= maxLED)
+        {
+
+//             Serial.println(currentAngle);
+//             Serial.println(currentAngle + WEDGE_ANGLE);
+
+            // Determine the run length for this section
+            int runLength = calcArcLen(currentAngle, currentAngle + WEDGE_ANGLE);
+            int runLengthInLEDs = runLength / LED_SPACING;
+
+            // Serial.println(runLength);
+            // Serial.println(runLengthInLEDs);
+
+            // Next LED is the current one plus the run length
+            nextLED = int(currentLED + runLengthInLEDs);
+
+            // Beginning and end LEDs are now set - add the interval to the channel's layers
+            channelArcs[currentSection][currentLayer][0] = maxLED - nextLED;
+            channelArcs[currentSection][currentLayer][1] = maxLED - currentLED;
+
+//            Serial.print(channelArcs[currentSection][currentLayer][0]);
+//            Serial.print(", ");
+//            Serial.println(channelArcs[currentSection][currentLayer][1]);
+
+            // Set state for next iteration.
+            currentAngle = currentAngle + WEDGE_ANGLE;
+
+            // If the section is on its' final slice, increment to the next layer.
+            if (currentSection == N - 1)
+            {
+                currentLayer++;
+            }
+
+            // Increment the section
+            currentSection = (currentSection + 1) % N;
+
+            // Set the current LED to the start of the next length
+            currentLED = nextLED;
+
+        }
+
+        maxLayer = currentLayer - 1;
+        // Serial.print("Max layer: ");
+        // Serial.println(maxLayer);
+        
+        Serial.println("Spiral calculated!");
+
     }
+
     float arsinh(float x)
     {
         return log(x + sqrt(pow(x, 2) + 1));
     }
+
     float calcArcLen(float thetaStrt, float thetaStop)
     {
         // Arc length of spiral, by taking End Length - Start Length
         return (C * ( (arsinh(thetaStop) / 2) + ( (thetaStop * sqrt( pow(thetaStop, 2) + 1 )) / 2 ) ) )
              - (C * ( (arsinh(thetaStrt) / 2) + ( (thetaStrt * sqrt( pow(thetaStrt, 2) + 1 )) / 2 ) ) );
     } 
-    void calcQuadFreqs()
-    {
-        for (int i = 0; i < N; i++)
-        {
-            channels[i] = constrain(channels[i], 0, 1023);
-            sectionFreqPercentage[i] = (float) channels[i] / 1023.0;
-            sectionFreqPercentage[i] *= 1.25;
-            sectionFreqPercentage[i] = constrain(sectionFreqPercentage[i], 0.0, 1.0);
-        }
-    }
-    void reduce()
+
+    void applyColorToWedge(int wedge, CRGB& color, float intensity)
     {
 
-        for (int i = 0; i < N; i++)
+        // Clamp intensity from 0% - 100%
+        if (intensity < 0.00)
+            intensity = 0.00;
+
+        else if (intensity > 1.00)
+            intensity = 1.00;
+
+        float litLayers = intensity * maxLayer;
+        int numFullyLit = int(litLayers);
+        float partialLayerIntensity = litLayers - numFullyLit;
+
+        // Smooth the partial layer's intensity, so that it isn't so jittery in the <0.5 range.
+        partialLayerIntensity = pow(partialLayerIntensity, SMOOTH_POLYNOMIAL_DEGREE);
+
+        // Serial.println(intensity);
+        // Serial.println(litLayers);
+        // Serial.println(numFullyLit);
+        // Serial.println(partialLayerIntensity);
+        // Serial.println();
+
+        for (int i = 0; i <= numFullyLit; i++)
         {
-
-            if (sectionFreqMaxes[i] > 0.0)
-                sectionFreqMaxes[i] -= decayRate;
-
-            if (sectionFreqMaxes[i] > 1.0)
-            {
-                sectionFreqMaxes[i] = 0;
-            }
-            else if (sectionFreqMaxes[i] < 0)
-            {
-                sectionFreqMaxes[i] = 0.0;
-            }
-
+            setWedgeLayerToColor(wedge, i, color);
         }
+
+        if (numFullyLit < maxLayer)
+        {
+            CRGB dimmedColor = CRGB(
+                uint8_t(color.r * partialLayerIntensity),
+                uint8_t(color.g * partialLayerIntensity),
+                uint8_t(color.b * partialLayerIntensity)
+            );
+
+            setWedgeLayerToColor(wedge, numFullyLit + 1, dimmedColor);
+        }
+
     }
+
+    void setWedgeLayerToColor(int wedge, int layer, CRGB& color)
+    {
+        leds(channelArcs[wedge][layer][0], channelArcs[wedge][layer][1]) = color;
+    }
+
+    bool initialized = false;
 
     // r = C * theta (equation for spiral)
     float C = 4.5;
+    float WEDGE_ANGLE = 2*M_PI / N;
+    float LED_SPACING = 1.65;
 
     // Pi indexes
     float spiralSectorIndexes[(N * 4) + 1];
 
-    float sectionFreqPercentage[N];
-    float sectionFreqMaxes[N];
+    // Int for the max used layer within the channel arcs. 
+    int maxLayer = 0;
 
-    float ledLen = 1.65;
-    float percentInc = 0.24;
+    // Stored channel portions
+    int channelArcs[N][MAX_LAYERS][2];
 
-    float decayRate = 0.33;
-    float greaterThresh = 0.0;
+    int thresholds[N];
+
+    int counter = 0;
+
 };
 #endif
