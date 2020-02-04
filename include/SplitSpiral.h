@@ -7,8 +7,10 @@
 #define MAX_LAYERS 16
 
 #define MIN_INTENSITY 100
-#define DIMINISH_RATE 40
-#define SMOOTH_POLYNOMIAL_DEGREE 2
+#define DIMINISH_RATE 18
+#define PARTIAL_LAYER_LIGHT_PROPORTION 10
+
+#define BUFFER_DEPTH 4
 
 
 template<int N>
@@ -25,12 +27,52 @@ public:
 
         leds(0, maxLED) = CRGB::Black;
 
+        // store channel data into next frame in buffer
+        int bufferSlot = counter % BUFFER_DEPTH;
+        for (int i = 0; i < N; i++)
+        {
+            channelBuffer[bufferSlot][i] = channels[i];
+        }
+
+        // compute channel averages and save them into the scratch buffer
+        for (int chan = 0; chan < N; chan++)
+        {
+
+            int avg = 0;
+            for (int bufferFrame = 0; bufferFrame < BUFFER_DEPTH; bufferFrame++)
+            {
+                avg += channelBuffer[bufferFrame][chan];                
+            }
+
+            avg /= BUFFER_DEPTH;
+
+            // for (int i = 0; i < N; i++)
+            // {
+            //     Serial.print(scratchChannel[chan]);
+            //     Serial.print('\t');
+            // }
+            // Serial.println();
+
+            scratchChannel[chan] = avg;
+
+        } 
+
         for (int wedge = 0; wedge < N; wedge++)
         {
 
-            if (thresholds[wedge] < channels[wedge])
+            if (thresholds[wedge] < scratchChannel[wedge])
             {
-                thresholds[wedge] = channels[wedge];
+                thresholds[wedge] = scratchChannel[wedge];
+            }
+            else if (thresholds[wedge] > 1023)
+            { 
+                // Clamp to 1023
+                thresholds[wedge] = 1023;
+            }
+            else if (thresholds[wedge] < MIN_INTENSITY)
+            {
+                // Clamp to min intensity
+                thresholds[wedge] = MIN_INTENSITY;
             }
             else if (thresholds[wedge] > MIN_INTENSITY)
             {
@@ -41,8 +83,23 @@ public:
             float intensity = (thresholds[wedge] - MIN_INTENSITY)
                             / (1023.00         - MIN_INTENSITY);
 
+            // Amplify intensity by amplifier variable, for balancing
+            intensity *= totalAmp;
+            intensity += intensity * wedge * slopeAmp;
+
             applyColorToWedge(wedge, color, intensity);
 
+        }
+
+        if (counter % 500 == 1)
+        {
+            Serial.println();
+            for (int i = 0; i < N; i++)
+            {
+                Serial.print(thresholds[i]);
+                Serial.print('\t');
+            }
+            Serial.println();
         }
 
     }
@@ -76,26 +133,24 @@ private:
         while (currentLED <= maxLED)
         {
 
-//             Serial.println(currentAngle);
-//             Serial.println(currentAngle + WEDGE_ANGLE);
-
             // Determine the run length for this section
             int runLength = calcArcLen(currentAngle, currentAngle + WEDGE_ANGLE);
             int runLengthInLEDs = runLength / LED_SPACING;
 
-            // Serial.println(runLength);
-            // Serial.println(runLengthInLEDs);
-
             // Next LED is the current one plus the run length
             nextLED = int(currentLED + runLengthInLEDs);
+
+            if    (currentLED >= maxLED
+                || currentLED < 0
+                || nextLED    >= maxLED
+                || nextLED    < 0)
+            {
+                Serial.println("Bad data added to arcs!");
+            }
 
             // Beginning and end LEDs are now set - add the interval to the channel's layers
             channelArcs[currentSection][currentLayer][0] = maxLED - nextLED;
             channelArcs[currentSection][currentLayer][1] = maxLED - currentLED;
-
-//            Serial.print(channelArcs[currentSection][currentLayer][0]);
-//            Serial.print(", ");
-//            Serial.println(channelArcs[currentSection][currentLayer][1]);
 
             // Set state for next iteration.
             currentAngle = currentAngle + WEDGE_ANGLE;
@@ -141,15 +196,15 @@ private:
         if (intensity < 0.00)
             intensity = 0.00;
 
-        else if (intensity > 1.00)
-            intensity = 1.00;
+        else if (intensity > 0.99)
+            intensity = 0.99;
 
         float litLayers = intensity * maxLayer;
         int numFullyLit = int(litLayers);
         float partialLayerIntensity = litLayers - numFullyLit;
 
         // Smooth the partial layer's intensity, so that it isn't so jittery in the <0.5 range.
-        partialLayerIntensity = pow(partialLayerIntensity, SMOOTH_POLYNOMIAL_DEGREE);
+        partialLayerIntensity = roundToNearestProportion(partialLayerIntensity, PARTIAL_LAYER_LIGHT_PROPORTION);
 
         // Serial.println(intensity);
         // Serial.println(litLayers);
@@ -180,6 +235,11 @@ private:
         leds(channelArcs[wedge][layer][0], channelArcs[wedge][layer][1]) = color;
     }
 
+    float roundToNearestProportion(float num, int proportion)
+    {
+        return float(int(num * proportion)) / proportion;
+    }
+
     bool initialized = false;
 
     // r = C * theta (equation for spiral)
@@ -198,7 +258,13 @@ private:
 
     int thresholds[N];
 
-    int counter = 0;
+    float totalAmp = 1.75;
+    float slopeAmp = 0.2;
+
+    int channelBuffer[BUFFER_DEPTH][N];
+    int scratchChannel[N];
+
+    long counter = 0;
 
 };
 #endif
