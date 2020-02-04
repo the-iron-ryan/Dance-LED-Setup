@@ -7,7 +7,7 @@
 #define THRESH_DIM_INTERVAL 50
 
 #define PUSH_SPEED 2
-#define CORE_LENGTH 150
+#define CORE_LENGTH 50
 
 void PushThrough::step() {
 

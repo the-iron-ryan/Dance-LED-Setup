@@ -78,14 +78,14 @@ DEFINE_GRADIENT_PALETTE( PAL_POINTY_PARTY ) {
   255,  255,  255,  255, // full while
 };
 
-DEFINE_GRADIENT_PALETTE( PAL_RAINBOW ) {
-  10,   209,  0,    0,    // r
-  50,   255,  102,  32,   // o
-  100,   255,  213,  33,   // y
-  150,   51,   221,  0,    // g
-  200,   17,   51,   204,  // b
-  225,   34,   0,    102,  // i
-  255,   51,   0,    68,   // v
+DEFINE_GRADIENT_PALETTE( PAL_REVRAINBOW ) {
+  0,     148,   0,    211,   // v
+  42,    75,    0,    130,  // i
+  84,    0,     0,    255,  // b
+  126,   0,     255,  0,    // g
+  168,   255,   255,  0,   // y
+  210,   255,   127,  0,   // o
+  255,   255,   0,    0,    // r
 };
 
 DEFINE_GRADIENT_PALETTE( PAL_MAGMA ) {
@@ -111,7 +111,7 @@ DEFINE_GRADIENT_PALETTE( PAL_MONOCHROME )
   255,  255,  255,  255,    // White
 };
 
-#define NUM_PALETTES 8
+#define NUM_PALETTES 1
 CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
@@ -147,17 +147,11 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new PushThrough(leds);
+  changers[0] = new SplitSpiral<7>  (leds(200, NUM_LEDS));
+  //changers[1] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_MONOCHROME;
-  palettes[1] = PAL_HALLOWEEN_GEN;
-  palettes[2] = PAL_HALLOWEEN_GHOUL;
-  palettes[3] = PAL_HALLOWEEN_PUMPKIN;
-  palettes[4] = PAL_POINTY_PARTY;
-	palettes[5] = PAL_MAGMA;
-  palettes[6] = PAL_FOREST;
-  palettes[7] = PAL_RAINBOW;
+  palettes[0] = PAL_REVRAINBOW;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -176,26 +170,6 @@ int getCurrentEpoch()
 {
   tick++;
   return tick / TICKS_PER_EPOCH;
-}
-
-void printLED(CRGBSet set, int index)
-{
-  Serial.print(set[index].r);
-  Serial.print(",\t");
-  Serial.print(set[index].g);
-  Serial.print(",\t");
-  Serial.print(set[index].b);
-  Serial.println();
-}
-
-void printCLED(int index)
-{
-  Serial.print(realleds[index].r);
-  Serial.print(",\t");
-  Serial.print(realleds[index].g);
-  Serial.print(",\t");
-  Serial.print(realleds[index].b);
-  Serial.println();
 }
 
 void startNewEpoch()

@@ -4,122 +4,267 @@
 #include "Changer.h"
 #include <FastLED.h>
 
+#define MAX_LAYERS 16
+
+#define MIN_INTENSITY 100
+#define DIMINISH_RATE 18
+#define PARTIAL_LAYER_LIGHT_PROPORTION 10
+
+#define BUFFER_DEPTH 4
+
 
 template<int N>
 class SplitSpiral : public Changer
 {
 public:
-    SplitSpiral(int* _channels, CRGBSet _leds, int _minLED, int _maxLED) : Changer(_channels, _leds, _minLED, _maxLED) { initArcLengths(); } 
-    SplitSpiral(int* _channels, CRGBSet _leds, int _minLED, int _maxLED, CRGBPalette16 _palette) : Changer(_channels, _leds, _minLED, _maxLED, _palette) { initArcLengths(); } 
+    SplitSpiral(CRGBSet _leds) : Changer(_leds) { initArcLengths(); } 
 
     virtual void step()
     {
-        calcQuadFreqs();
 
-        int curQuadIndex = 0;
-        for (int i = maxLED - 1; i > 0; i--)
+        counter++;
+
+        leds(0, leds.len) = CRGB::Black;
+
+        // store channel data into next frame in buffer
+        int bufferSlot = counter % BUFFER_DEPTH;
+        for (int i = 0; i < N; i++)
         {
-            int LEDIndex = (maxLED - 1) - i;
-            double size = ledLen * (double)LEDIndex; 
-
-            // Update quad index if greater than curent arc size
-            if (size > quadIndexes[curQuadIndex] && curQuadIndex < N*4)
-            {
-                curQuadIndex++;
-            }
-
-            if (i < minLED)
-            {
-                leds[i] = CRGB::Black;
-            }
-            else
-            {
-                int index = curQuadIndex % N;
-                double freqPercent = quadFreqPercentage[index];
-
-                // Are we greater than last value? If so, set it
-                if (freqPercent > (quadFreqMaxes[index] + greaterThresh))
-                {
-                    quadFreqMaxes[index] = freqPercent;
-                }
-
-                // Get percent value represented at this given turn of the spiralA
-                int scaleMult = (curQuadIndex / N) + 1;
-                double turnMaxPercent = scaleMult * percentInc;
-                turnMaxPercent = min(1.0, turnMaxPercent);
-                double val = turnMaxPercent - quadFreqMaxes[index];
-
-                int increment = (255/N);
-                uint8_t palIndex = ((index + 1) * increment) - 1;
-                leds[i] = ColorFromPalette(palette, palIndex);
-
-                if (val > 0.0)
-                {
-                    // Cap value at percent min, done so that we zero out channels
-                    val = min(percentInc, val);
-                    double relAmt = percentInc - val;
-                    double percentFilled = relAmt / percentInc;
-
-                    uint8_t fadeAmt = (1.0 - percentFilled) * 255;
-                    leds[i].fadeToBlackBy(fadeAmt);
-                }
-            }
+            channelBuffer[bufferSlot][i] = music->current().channels[i];
         }
 
-        // reduce max values
-        reduce();
+        // compute channel averages and save them into the scratch buffer
+        for (int chan = 0; chan < N; chan++)
+        {
+
+            int avg = 0;
+            for (int bufferFrame = 0; bufferFrame < BUFFER_DEPTH; bufferFrame++)
+            {
+                avg += channelBuffer[bufferFrame][chan];                
+            }
+
+            avg /= BUFFER_DEPTH;
+
+            // for (int i = 0; i < N; i++)
+            // {
+            //     Serial.print(scratchChannel[chan]);
+            //     Serial.print('\t');
+            // }
+            // Serial.println();
+
+            scratchChannel[chan] = avg;
+
+        } 
+
+        for (int wedge = 0; wedge < N; wedge++)
+        {
+
+            if (thresholds[wedge] < scratchChannel[wedge])
+            {
+                thresholds[wedge] = scratchChannel[wedge];
+            }
+            else if (thresholds[wedge] > 1023)
+            { 
+                // Clamp to 1023
+                thresholds[wedge] = 1023;
+            }
+            else if (thresholds[wedge] < MIN_INTENSITY)
+            {
+                // Clamp to min intensity
+                thresholds[wedge] = MIN_INTENSITY;
+            }
+            else if (thresholds[wedge] > MIN_INTENSITY)
+            {
+                thresholds[wedge] -= DIMINISH_RATE;
+            }
+            
+            CRGB color = getColorFromPalette((256 / N) * wedge);
+            float intensity = (thresholds[wedge] - MIN_INTENSITY)
+                            / (1023.00         - MIN_INTENSITY);
+
+            // Amplify intensity by amplifier variable, for balancing
+            intensity *= totalAmp;
+            intensity += intensity * wedge * slopeAmp;
+
+            applyColorToWedge(wedge, color, intensity);
+
+        }
+
+        if (counter % 500 == 1)
+        {
+            Serial.println();
+            for (int i = 0; i < N; i++)
+            {
+                Serial.print(thresholds[i]);
+                Serial.print('\t');
+            }
+            Serial.println();
+        }
+
     }
 private:
+
     void initArcLengths()
     {
+
         // Setup pi indexes using math science shit
-        for (int i = 0; i < (N*4) + 1; i++)
+        // - Ryan Dougherty, #1 software partner
+
+        for (int i = 0; i < N; i++)
         {
-            quadIndexes[i] = calcArcLen(0, i * (2.0 * PI) / (double)N);
+            for (int j = 0; j < MAX_LAYERS; j++)
+            {
+                for (int k = 0; k < 2; k++)
+                {
+                    channelArcs[i][j][k] = 0;
+                }
+            }
         }
+
+        int currentLED = 0;
+        int nextLED    = 0;
+
+        float currentAngle = 0;
+
+        int currentSection = 0;
+        int currentLayer = 0;
+
+        while (currentLED <= leds.len)
+        {
+
+            // Determine the run length for this section
+            int runLength = calcArcLen(currentAngle, currentAngle + WEDGE_ANGLE);
+            int runLengthInLEDs = runLength / LED_SPACING;
+
+            // Next LED is the current one plus the run length
+            nextLED = int(currentLED + runLengthInLEDs);
+
+            // TEST: See if an OOB index is about to be added to the arc array
+            if    (currentLED >= leds.len
+                || currentLED < 0
+                || nextLED    >= leds.len
+                || nextLED    < 0)
+            {
+                Serial.println("Bad data added to arcs!");
+            }
+
+            // Beginning and end LEDs are now set - add the interval to the channel's layers
+            channelArcs[currentSection][currentLayer][0] = leds.len - nextLED;
+            channelArcs[currentSection][currentLayer][1] = leds.len - currentLED;
+
+            // Set state for next iteration.
+            currentAngle = currentAngle + WEDGE_ANGLE;
+
+            // If the section is on its' final slice, increment to the next layer.
+            if (currentSection == N - 1)
+            {
+                currentLayer++;
+            }
+
+            // Increment the section
+            currentSection = (currentSection + 1) % N;
+
+            // Set the current LED to the start of the next length
+            currentLED = nextLED;
+
+        }
+
+        maxLayer = currentLayer - 1;
+        // Serial.print("Max layer: ");
+        // Serial.println(maxLayer);
+        
+        Serial.println("Spiral calculated!");
+
     }
-    double arsinh(double x)
+
+    float arsinh(float x)
     {
         return log(x + sqrt(pow(x, 2) + 1));
     }
-    double calcArcLen(double thetaStrt, double thetaStop)
+
+    float calcArcLen(float thetaStrt, float thetaStop)
     {
         // Arc length of spiral, by taking End Length - Start Length
         return (C * ( (arsinh(thetaStop) / 2) + ( (thetaStop * sqrt( pow(thetaStop, 2) + 1 )) / 2 ) ) )
              - (C * ( (arsinh(thetaStrt) / 2) + ( (thetaStrt * sqrt( pow(thetaStrt, 2) + 1 )) / 2 ) ) );
     } 
-    void calcQuadFreqs()
-    {
-        for (int i = 0; i < N; i++)
-        {
-            quadFreqPercentage[i] = channels[i];
-            quadFreqPercentage[i] /= (1023.0);
 
-            quadFreqPercentage[i] = constrain(quadFreqPercentage[i], 0.0, 100.0);
-        }
-    }
-    void reduce()
+    void applyColorToWedge(int wedge, CRGB& color, float intensity)
     {
-        for (int i = 0; i < N; i++)
+
+        // Clamp intensity from 0% - 100%
+        if (intensity < 0.00)
+            intensity = 0.00;
+
+        else if (intensity > 0.99)
+            intensity = 0.99;
+
+        float litLayers = intensity * maxLayer;
+        int numFullyLit = int(litLayers);
+        float partialLayerIntensity = litLayers - numFullyLit;
+
+        // Smooth the partial layer's intensity, so that it isn't so jittery in the <0.5 range.
+        partialLayerIntensity = roundToNearestProportion(partialLayerIntensity, PARTIAL_LAYER_LIGHT_PROPORTION);
+
+        // Serial.println(intensity);
+        // Serial.println(litLayers);
+        // Serial.println(numFullyLit);
+        // Serial.println(partialLayerIntensity);
+        // Serial.println();
+
+        for (int i = 0; i <= numFullyLit; i++)
         {
-            if (quadFreqMaxes[i] > 0)
-                quadFreqMaxes[i] -= decayRate;
+            setWedgeLayerToColor(wedge, i, color);
         }
+
+        if (numFullyLit < maxLayer)
+        {
+            CRGB dimmedColor = CRGB(
+                uint8_t(color.r * partialLayerIntensity),
+                uint8_t(color.g * partialLayerIntensity),
+                uint8_t(color.b * partialLayerIntensity)
+            );
+
+            setWedgeLayerToColor(wedge, numFullyLit + 1, dimmedColor);
+        }
+
     }
+
+    void setWedgeLayerToColor(int wedge, int layer, CRGB& color)
+    {
+        leds(channelArcs[wedge][layer][0], channelArcs[wedge][layer][1]) = color;
+    }
+
+    float roundToNearestProportion(float num, int proportion)
+    {
+        return float(int(num * proportion)) / proportion;
+    }
+
+    bool initialized = false;
 
     // r = C * theta (equation for spiral)
-    double C = 4.5;
+    float C = 4.5;
+    float WEDGE_ANGLE = 2*M_PI / N;
+    float LED_SPACING = 1.65;
 
     // Pi indexes
-    double quadIndexes[(N * 4) + 1];
+    float spiralSectorIndexes[(N * 4) + 1];
 
-    double quadFreqPercentage[N];
-    double quadFreqMaxes[N];
+    // Int for the max used layer within the channel arcs. 
+    int maxLayer = 0;
 
-    double ledLen = 1.65;
-    double percentInc = 0.24;
+    // Stored channel portions
+    int channelArcs[N][MAX_LAYERS][2];
 
-    double decayRate = 0.50;
-    double greaterThresh = 0.0;
+    int thresholds[N];
+
+    float totalAmp = 1.75;
+    float slopeAmp = 0.2;
+
+    int channelBuffer[BUFFER_DEPTH][N];
+    int scratchChannel[N];
+
+    long counter = 0;
+
 };
 #endif
