@@ -111,7 +111,15 @@ DEFINE_GRADIENT_PALETTE( PAL_MONOCHROME )
   255,  255,  255,  255,    // White
 };
 
-#define NUM_PALETTES 1
+DEFINE_GRADIENT_PALETTE ( PAL_BEACHY )
+{
+  0,    0,    12,   188,    // Blue
+  100,  210,  184,  0,      // Yellow
+  180,  0,    175,  0,      // Green
+  255,  0,    90,   255,    // Blue, but Different!
+};
+
+#define NUM_PALETTES 5
 CRGBPalette16 palettes[NUM_PALETTES];
 
 // AUDIO INPUT SETUP
@@ -151,7 +159,11 @@ void setup()
   //changers[1] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_REVRAINBOW;
+  palettes[0] = PAL_BEACHY;
+  palettes[1] = PAL_REVRAINBOW;
+  palettes[2] = PAL_FOREST;
+  palettes[3] = PAL_MAGMA;
+  palettes[4] = PAL_HALLOWEEN_GHOUL;
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -206,8 +218,6 @@ void loop()
   }
 
   changers[currentChanger]->step();
-  Serial.println(data->refreshRate);
-// data->current().log();
 
   FastLED.show();
 

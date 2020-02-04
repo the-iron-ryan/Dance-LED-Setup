@@ -35,7 +35,7 @@ public:
 
     const MusicFrame& current()
     {
-        return this->at(m_frameBuffer.size() - 1);
+        return m_frameBuffer.first();
     }
 
     void analyze();

@@ -7,7 +7,7 @@
 #define MAX_LAYERS 16
 
 #define MIN_INTENSITY 100
-#define DIMINISH_RATE 18
+#define DIMINISH_RATE 25
 #define PARTIAL_LAYER_LIGHT_PROPORTION 10
 
 #define BUFFER_DEPTH 4
@@ -258,7 +258,7 @@ private:
 
     int thresholds[N];
 
-    float totalAmp = 1.75;
+    float totalAmp = 1.5;
     float slopeAmp = 0.2;
 
     int channelBuffer[BUFFER_DEPTH][N];
