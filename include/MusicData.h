@@ -1,7 +1,7 @@
 #ifndef MUSICDATA_H
 #define MUSICDATA_H
 
-#include <CircularBuffer.h>
+#include <FrameBuffer.h>
 #include <MusicFrame.h>
 
 class MusicData
@@ -48,7 +48,7 @@ private:
 
     MusicData();
 
-    CircularBuffer<MusicFrame, G_NUM_CHANNELS> m_frameBuffer; 
+    FrameBuffer<G_NUM_CHANNELS> m_frameBuffer; 
 
 };
 

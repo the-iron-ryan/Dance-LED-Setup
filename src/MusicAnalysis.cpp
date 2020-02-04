@@ -1,13 +1,13 @@
 #include "MusicAnalysis.h"
-#include "CircularBuffer.h"
+#include "FrameBuffer.h"
 
-int calculateBPM(CircularBuffer<MusicFrame, MusicData::FRAME_QUEUE_SIZE>& buffer)
+int calculateBPM()
 {
     return -1;
 }
 
 
-int calculateRefreshRate(CircularBuffer<MusicFrame, MusicData::FRAME_QUEUE_SIZE>& buffer)
+int calculateRefreshRate()
 {
     return -1;
 }
