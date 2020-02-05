@@ -153,7 +153,7 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new SplitSpiral<7>  (leds(200, NUM_LEDS));
+  changers[0] = new SplitSpiral<1, 6>  (leds(200, NUM_LEDS));
   //changers[1] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION

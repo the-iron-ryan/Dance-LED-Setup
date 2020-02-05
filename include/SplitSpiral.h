@@ -7,16 +7,18 @@
 #define MAX_LAYERS 16
 
 #define MIN_INTENSITY 100
-#define DIMINISH_RATE 25
+#define DIMINISH_RATE 23
 #define PARTIAL_LAYER_LIGHT_PROPORTION 10
 
-#define BUFFER_DEPTH 4
+#define BUFFER_DEPTH 3
 
 #define TOTAL_AMP 1.5
 #define SLOPE_AMP 0.2
 
+#define N_FUNC() (B - A + 1)
+#define N N_FUNC()
 
-template<int N>
+template<int A, int B>
 class SplitSpiral : public Changer
 {
 public:
@@ -28,7 +30,7 @@ public:
         leds(0, leds.len) = CRGB::Black;
 
         // compute channel averages and save them into the scratch buffer
-        for (int channel = 0; channel < N; channel++)
+        for (int channel = A; channel <= B; channel++)
         {
 
             int avg = 0;
@@ -46,18 +48,33 @@ public:
             // }
             // Serial.println();
 
-            scratchFrame[channel] = avg;
+            scratchFrame[channel - A] = avg;
 
         } 
+
+//        for (int i = 0; i < N; i++)
+//        {
+//            Serial.print(scratchFrame[i]);
+//            Serial.print('-');
+//            Serial.print(thresholds[i]);
+//            Serial.print('\t');
+//        }
+//        Serial.println();
 
         for (int wedge = 0; wedge < N; wedge++)
         {
 
-            if (thresholds[wedge] < scratchFrame[wedge])
+            if (scratchFrame[wedge] >= thresholds[wedge])
             {
                 thresholds[wedge] = scratchFrame[wedge];
             }
-            else if (thresholds[wedge] > 1023)
+            else
+            {
+                thresholds[wedge] -= DIMINISH_RATE;
+            }
+
+            // Clamp values
+            if (thresholds[wedge] > 1023)
             { 
                 // Clamp to 1023
                 thresholds[wedge] = 1023;
@@ -66,10 +83,6 @@ public:
             {
                 // Clamp to min intensity
                 thresholds[wedge] = MIN_INTENSITY;
-            }
-            else if (thresholds[wedge] > MIN_INTENSITY)
-            {
-                thresholds[wedge] -= DIMINISH_RATE;
             }
             
             CRGB color = getColorFromPalette((256 / N) * wedge);
