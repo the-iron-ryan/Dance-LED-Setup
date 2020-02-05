@@ -15,12 +15,10 @@ struct MusicFrame
     static const uint8_t AUDIO1_PIN = (uint8_t)'6';
     static const uint8_t AUDIO2_PIN = (uint8_t)'7';
 
-    int left[G_NUM_CHANNELS];
-    int right[G_NUM_CHANNELS];
     int channels[G_NUM_CHANNELS];
 
-    long creationTime = 0;
-    long creationTick = 0;
+    int creationTime = 0;
+    int creationTick = 0;
 
     MusicFrame(): MusicFrame(0) {}
 

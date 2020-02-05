@@ -3,10 +3,8 @@
 #include "MusicData.h"
 #include "PushThrough.h"
 #include "Changer.h"
-#include "Rainbow.h"
 #include "SimplePulse.h"
 #include "MixBar.h"
-#include "Quadrant.h"
 #include "SplitSpiral.h"
 #include "BassPush.h"
 

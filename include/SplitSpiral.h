@@ -12,6 +12,9 @@
 
 #define BUFFER_DEPTH 4
 
+#define TOTAL_AMP 1.5
+#define SLOPE_AMP 0.2
+
 
 template<int N>
 class SplitSpiral : public Changer
@@ -22,46 +25,37 @@ public:
     virtual void step()
     {
 
-        counter++;
-
         leds(0, leds.len) = CRGB::Black;
 
-        // store channel data into next frame in buffer
-        int bufferSlot = counter % BUFFER_DEPTH;
-        for (int i = 0; i < N; i++)
-        {
-            channelBuffer[bufferSlot][i] = music->current().channels[i];
-        }
-
         // compute channel averages and save them into the scratch buffer
-        for (int chan = 0; chan < N; chan++)
+        for (int channel = 0; channel < N; channel++)
         {
 
             int avg = 0;
-            for (int bufferFrame = 0; bufferFrame < BUFFER_DEPTH; bufferFrame++)
+            for (int bufferFrameIndex = 0; bufferFrameIndex < BUFFER_DEPTH; bufferFrameIndex++)
             {
-                avg += channelBuffer[bufferFrame][chan];                
+                avg += music->at(bufferFrameIndex).channels[channel];                
             }
 
             avg /= BUFFER_DEPTH;
 
             // for (int i = 0; i < N; i++)
             // {
-            //     Serial.print(scratchChannel[chan]);
+            //     Serial.print(scratchFrame[frame]);
             //     Serial.print('\t');
             // }
             // Serial.println();
 
-            scratchChannel[chan] = avg;
+            scratchFrame[channel] = avg;
 
         } 
 
         for (int wedge = 0; wedge < N; wedge++)
         {
 
-            if (thresholds[wedge] < scratchChannel[wedge])
+            if (thresholds[wedge] < scratchFrame[wedge])
             {
-                thresholds[wedge] = scratchChannel[wedge];
+                thresholds[wedge] = scratchFrame[wedge];
             }
             else if (thresholds[wedge] > 1023)
             { 
@@ -83,22 +77,11 @@ public:
                             / (1023.00         - MIN_INTENSITY);
 
             // Amplify intensity by amplifier variable, for balancing
-            intensity *= totalAmp;
-            intensity += intensity * wedge * slopeAmp;
+            intensity *= TOTAL_AMP;
+            intensity += intensity * wedge * SLOPE_AMP;
 
             applyColorToWedge(wedge, color, intensity);
 
-        }
-
-        if (counter % 500 == 1)
-        {
-            Serial.println();
-            for (int i = 0; i < N; i++)
-            {
-                Serial.print(thresholds[i]);
-                Serial.print('\t');
-            }
-            Serial.println();
         }
 
     }
@@ -258,13 +241,7 @@ private:
 
     int thresholds[N];
 
-    float totalAmp = 1.5;
-    float slopeAmp = 0.2;
-
-    int channelBuffer[BUFFER_DEPTH][N];
-    int scratchChannel[N];
-
-    long counter = 0;
+    int scratchFrame[N];
 
 };
 #endif

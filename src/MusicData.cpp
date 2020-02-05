@@ -18,12 +18,15 @@ MusicData* MusicData::instance()
 
 MusicData::MusicData()
 {
+    // Initialize pins
     pinMode     (MusicFrame::AUDIO1_PIN, INPUT);
     pinMode     (MusicFrame::AUDIO2_PIN, INPUT);
     pinMode     (MusicFrame::STROBE_PIN, OUTPUT);
     pinMode     (MusicFrame::RESET_PIN,  OUTPUT);
     digitalWrite(MusicFrame::RESET_PIN,  LOW);
     digitalWrite(MusicFrame::STROBE_PIN, HIGH);
+
+    // Initialize start time
 }
 
 void MusicData::update()
@@ -31,9 +34,4 @@ void MusicData::update()
     m_ticks++;
 
     m_frameBuffer.push(ticks);
-}
-
-void MusicData::analyze()
-{
-    m_refreshRate = -2;
 }

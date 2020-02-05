@@ -11,10 +11,9 @@ public:
 
     static MusicData* instance();
 
-    static const int FRAME_QUEUE_SIZE = 100;
+    static const int FRAME_BUFFER_SIZE = 50;
 
     const long& ticks = m_ticks;
-    const int&  refreshRate = m_refreshRate;
 
     void update();
     MusicData& operator++(int n)
@@ -38,19 +37,33 @@ public:
         return m_frameBuffer.first();
     }
 
-    void analyze();
-
 private:
 
 
     static MusicData* m_instance;
 
-    long m_ticks = 0;
-    int m_refreshRate = 0;
+    int m_ticks = 0;
+    int m_creationTime;
 
+    /**
+     * Array for storing rolling averages for each audio channel
+     */
+    float channelMeans[G_NUM_CHANNELS];
+
+    /**
+     * Array for storing rolling variance for each audio channel
+     */
+    float channelEnergyVariances[G_NUM_CHANNELS];
+
+    /**
+     * Private constructor for Singleton pattern.
+     */
     MusicData();
 
-    FrameBuffer<G_NUM_CHANNELS> m_frameBuffer; 
+    /**
+     * Buffer for MusicFrame data.
+     */
+    FrameBuffer<FRAME_BUFFER_SIZE> m_frameBuffer; 
 
 };
 
