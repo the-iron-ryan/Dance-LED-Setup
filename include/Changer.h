@@ -34,8 +34,24 @@ class Changer
             palette(_palette)
             {}
 
+        /**
+         * Completes one step of the changer's iteration
+         */
         virtual void step() {}
 
+        /**
+         * Called before the changer is activated.
+         */
+        virtual void init() {}
+
+        /**
+         * Called before the changer is deactivated.
+         */
+        virtual void stop() {}
+
+        /**
+         * Sets the changer's current palette
+         */
         void setPalette(CRGBPalette16);
 
     protected:

@@ -184,6 +184,9 @@ int getCurrentEpoch()
 
 void startNewEpoch()
 {
+
+  changers[currentChanger]->stop();
+
   currentChanger = random(NUM_CHANGERS);
   currentPalette = random(NUM_PALETTES);
 
@@ -201,6 +204,7 @@ void startNewEpoch()
     Serial.print(',');
     Serial.println(currentChanger);
 
+  changers[currentChanger]->init();
   changers[currentChanger]->setPalette(palettes[currentPalette]);
 }
 

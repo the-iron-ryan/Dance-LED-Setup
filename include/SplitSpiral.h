@@ -31,6 +31,11 @@ class SplitSpiral : public Changer
 public:
     SplitSpiral(CRGBSet _leds) : Changer(_leds) { initArcLengths(); } 
 
+    virtual void init()
+    {
+        startWedge++;
+    }
+
     virtual void step()
     {
 
@@ -100,7 +105,7 @@ public:
             intensity *= TOTAL_AMP;
             intensity *= channelAmps[wedge + A];
 
-            applyColorToWedge(wedge, color, intensity);
+            applyColorToWedge((wedge + startWedge) % N, color, intensity);
 
         }
 
@@ -262,6 +267,8 @@ private:
     int thresholds[N];
 
     int scratchFrame[N];
+
+    int startWedge = 0;
 
     double channelAmps[7] = {
         CHANNEL_0_AMP,
