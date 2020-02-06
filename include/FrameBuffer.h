@@ -8,6 +8,8 @@ class FrameBuffer
 {
     public:
 
+        const int& size = m_size;
+
         FrameBuffer()
         {
             m_next_index = 0;
@@ -44,7 +46,7 @@ class FrameBuffer
 
         const MusicFrame& last()
         {
-            return this->at(0);
+            return this->at(N - 1);
         }
 
     private:

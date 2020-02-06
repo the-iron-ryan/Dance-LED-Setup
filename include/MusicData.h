@@ -4,6 +4,13 @@
 #include <FrameBuffer.h>
 #include <MusicFrame.h>
 
+#define STRONG_DEVIATION 3
+#define WEAK_DEVIATION 1.5
+
+#define STRONG_COOLDOWN 400
+#define WEAK_COOLDOWN   200
+
+
 class MusicData
 {
 
@@ -24,6 +31,10 @@ public:
      * Number of ticks (updates) that the MusicData has processed since creaion.
      */
     const int& ticks = m_ticks;
+
+    const bool& strongBeat = m_strongBeat;
+
+    const bool& weakBeat = m_weakBeat;
 
     /**
      * Updates the MusicData, adding another frame from the currently-playing
@@ -78,19 +89,26 @@ private:
     int m_ticks = 0;
 
     /**
-     *  Unix time of creation.
-     */
-    int m_creationTime;
-
-    /**
      * Array for storing rolling averages for each audio channel
      */
-    float channelMeans[G_NUM_CHANNELS];
+    float m_channelMeans[G_NUM_CHANNELS];
 
     /**
      * Array for storing rolling variance for each audio channel
      */
-    float channelEnergyVariances[G_NUM_CHANNELS];
+    float m_channelEnergyVariances[G_NUM_CHANNELS];
+
+    float m_energyMean = 0;
+
+    float m_energyVariance = 0;
+
+    float m_energyDeviation = 0;
+
+    bool m_lastStrong = 0;
+    bool m_lastWeak   = 0;
+
+    bool m_strongBeat = false;
+    bool m_weakBeat   = false;
 
     /**
      * Private constructor for Singleton pattern.

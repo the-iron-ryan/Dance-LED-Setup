@@ -135,7 +135,7 @@ int currentChanger;
 int currentPalette;
 
 // Preinit changer array
-#define NUM_CHANGERS 1
+#define NUM_CHANGERS 2
 Changer* changers[NUM_CHANGERS];
 
 void setup()
@@ -154,7 +154,7 @@ void setup()
 
   // CREATE CHANGER COLLECTION
   changers[0] = new SplitSpiral<1, 6>  (leds(200, NUM_LEDS));
-  //changers[1] = new PushThrough(leds);
+  changers[1] = new PushThrough(leds);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_BEACHY;
@@ -200,12 +200,11 @@ void startNewEpoch()
 
     Serial.print(millis());
     Serial.print(',');
-    Serial.print(TICKS_PER_EPOCH);
+    Serial.print(data->ticks);
     Serial.print(',');
     Serial.println(currentChanger);
 
   changers[currentChanger]->init();
-  changers[currentChanger]->setPalette(palettes[currentPalette]);
 }
 
 void loop()
@@ -214,9 +213,13 @@ void loop()
   // Update channel info
   data->update();
 
-  if (data->ticks % TICKS_PER_EPOCH == 0)
+  if (data->strongBeat)
   {
     startNewEpoch();
+  }
+  else if (data->weakBeat)
+  {
+    changers[currentChanger]->setPalette(palettes[random(NUM_PALETTES)]);
   }
 
   changers[currentChanger]->step();

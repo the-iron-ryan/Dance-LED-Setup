@@ -29,6 +29,10 @@ struct MusicFrame
         return channels[i];
     }
 
+    float deviation = 0;
+
+    int energyLevel;
+
     void log() const;
 
 };

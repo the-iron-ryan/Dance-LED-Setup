@@ -7,20 +7,20 @@
 #define MAX_LAYERS 16
 
 #define MIN_INTENSITY 100
-#define DIMINISH_RATE 23
+#define DIMINISH_RATE 18
 #define PARTIAL_LAYER_LIGHT_PROPORTION 10
 
 #define BUFFER_DEPTH 3
 
 #define TOTAL_AMP 2
 
-#define CHANNEL_0_AMP 1.5
-#define CHANNEL_1_AMP 1.5
-#define CHANNEL_2_AMP 1.33
-#define CHANNEL_3_AMP 1.0
-#define CHANNEL_4_AMP 1.33
-#define CHANNEL_5_AMP 1.66
-#define CHANNEL_6_AMP 2.5
+#define CHANNEL_AMP 1.5, \
+                    1.5, \
+                    1.33, \
+                    1.0, \
+                    1.33, \
+                    1.66, \
+                    2.5 
 
 #define N_FUNC() (B - A + 1)
 #define N N_FUNC()
@@ -270,15 +270,7 @@ private:
 
     int startWedge = 0;
 
-    double channelAmps[7] = {
-        CHANNEL_0_AMP,
-        CHANNEL_1_AMP,
-        CHANNEL_2_AMP,
-        CHANNEL_3_AMP,
-        CHANNEL_4_AMP,
-        CHANNEL_5_AMP,
-        CHANNEL_6_AMP
-    };
+    double channelAmps[7] = { CHANNEL_AMP };
 
 };
 #endif

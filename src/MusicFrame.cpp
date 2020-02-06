@@ -20,6 +20,11 @@ MusicFrame::MusicFrame(long tick):
         // Reset the strobe pin to high volt
         digitalWrite(MusicFrame::STROBE_PIN, HIGH); 
     }
+
+    energyLevel = 0;
+    for (int i = 0; i < MusicFrame::NUM_CHANNELS; i++)
+        energyLevel += channels[i];
+
 }
 
 void MusicFrame::log() const
@@ -34,5 +39,6 @@ void MusicFrame::log() const
         Serial.print(channels[i]);
     }
 
-    Serial.println();
+    Serial.print("\t || \t");
+    Serial.println(this->energyLevel);
 }
