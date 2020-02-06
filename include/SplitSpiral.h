@@ -12,8 +12,15 @@
 
 #define BUFFER_DEPTH 3
 
-#define TOTAL_AMP 1.5
-#define SLOPE_AMP 0.2
+#define TOTAL_AMP 2
+
+#define CHANNEL_0_AMP 1.5
+#define CHANNEL_1_AMP 1.5
+#define CHANNEL_2_AMP 1.33
+#define CHANNEL_3_AMP 1.0
+#define CHANNEL_4_AMP 1.33
+#define CHANNEL_5_AMP 1.66
+#define CHANNEL_6_AMP 2.5
 
 #define N_FUNC() (B - A + 1)
 #define N N_FUNC()
@@ -91,7 +98,7 @@ public:
 
             // Amplify intensity by amplifier variable, for balancing
             intensity *= TOTAL_AMP;
-            intensity += intensity * wedge * SLOPE_AMP;
+            intensity *= channelAmps[wedge + A];
 
             applyColorToWedge(wedge, color, intensity);
 
@@ -255,6 +262,16 @@ private:
     int thresholds[N];
 
     int scratchFrame[N];
+
+    double channelAmps[7] = {
+        CHANNEL_0_AMP,
+        CHANNEL_1_AMP,
+        CHANNEL_2_AMP,
+        CHANNEL_3_AMP,
+        CHANNEL_4_AMP,
+        CHANNEL_5_AMP,
+        CHANNEL_6_AMP
+    };
 
 };
 #endif
