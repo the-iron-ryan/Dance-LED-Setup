@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include <fix_fft.h>
 
+#include "IRremote.h"
 #include "MusicData.h"
 #include "PushThrough.h"
 #include "Changer.h"
@@ -223,7 +224,6 @@ void startNewEpoch()
 
 void loop()
 {  
-/*
   // Update channel info
   data->update();
 
@@ -239,8 +239,4 @@ void loop()
   changers[currentChanger]->step();
 
   FastLED.show();
-*/
-
-  int IRG = digitalRead()
-
 }
