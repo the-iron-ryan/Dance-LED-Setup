@@ -1,4 +1,5 @@
 #include <FastLED.h>
+#include <fix_fft.h>
 
 #include "MusicData.h"
 #include "PushThrough.h"
@@ -6,6 +7,7 @@
 #include "SimplePulse.h"
 #include "MixBar.h"
 #include "SplitSpiral.h"
+#include "SplitLine.h"
 #include "BassPush.h"
 
 // Arduino Music Visualizer 0.3
@@ -18,10 +20,18 @@
 
 // This code uses the Sparkfun Spectrum Shield
 
+// Settings for IR remote signal
+#define IR_SIGNAL_PIN 7
+#define IR_REMOTE_ENABLED 1
+
+// Pins for reading raw analog audio
+#define LEFT_RAW_AUDIO_PIN A3
+#define RIGHT_RAW_AUDIO_PIN A4
+
 // LED LIGHTING SETUP
-#define LED_PIN     7
-#define NUM_LEDS    1097
-#define BRIGHTNESS  64
+#define LED_PIN     54
+#define NUM_LEDS    150
+#define BRIGHTNESS  200
 #define LED_TYPE    NEOPIXEL
 #define COLOR_ORDER GRB
 CRGB realleds[NUM_LEDS];
@@ -153,8 +163,12 @@ void setup()
 
 
   // CREATE CHANGER COLLECTION
-  changers[0] = new SplitSpiral<1, 6>  (leds(200, NUM_LEDS));
-  changers[1] = new PushThrough(leds);
+  //changers[0] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
+  //changers[1] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
+  //changers[2] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
+  changers[0] = new SplitLine<1,6>(leds);
+  changers[1] = new SplitLine<1,6>(leds);
+  
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_BEACHY;
@@ -209,7 +223,7 @@ void startNewEpoch()
 
 void loop()
 {  
-
+/*
   // Update channel info
   data->update();
 
@@ -225,5 +239,8 @@ void loop()
   changers[currentChanger]->step();
 
   FastLED.show();
+*/
+
+  int IRG = digitalRead()
 
 }
