@@ -49,7 +49,6 @@ Changer* Remote::getChanger(ERemoteButton button)
 
 void Remote::pingResutls()
 {
-    Changer *curChanger = nullptr;
     if (IRReceiver->decode(IRResults))
     {
         curTime = millis();
@@ -69,11 +68,12 @@ void Remote::pingResutls()
                     ERemoteButton button = getResultButton();
                     if (getChanger(button))
                     {
-                        curChanger = getChanger(button);
-                        CUR_CHANGER = curChanger;
+                        CUR_CHANGER->stop();
+                        CUR_CHANGER = getChanger(button);
+                        CUR_CHANGER->init();
+                        Serial.print("New Changer: ");
+                        Serial.println((unsigned long) CUR_CHANGER, HEX);
                         break;
-                        // Serial.println("Changer Ptr");
-                        // Serial.println((unsigned long) curChanger, HEX);
                     }
                 }
                 IRReceiver->resume();
