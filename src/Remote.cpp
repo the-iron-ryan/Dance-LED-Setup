@@ -1,8 +1,9 @@
 #include "Remote.h"
 
-#include "ChangerData.h"
 #include "Changer.h"
 #include "IRremote.h"
+
+extern Changer* CUR_CHANGER;
 
 Remote::Remote(int IRPin, int numRemotePairs, unsigned long censorTimeMilis)
 {
@@ -62,7 +63,7 @@ void Remote::pingResutls()
                 Serial.println(IRResults->value, HEX);
                 if (IRResults->value != 0xFFFFFFFF)
                 {
-                    Serial.println("Getting results...");
+                    //Serial.println("Getting results...");
                     curTime = millis();
 
                     ERemoteButton button = getResultButton();
@@ -70,8 +71,9 @@ void Remote::pingResutls()
                     {
                         curChanger = getChanger(button);
                         CUR_CHANGER = curChanger;
-                        Serial.println("Changer Ptr");
-                        Serial.println((unsigned long) curChanger, HEX);
+                        break;
+                        // Serial.println("Changer Ptr");
+                        // Serial.println((unsigned long) curChanger, HEX);
                     }
                 }
                 IRReceiver->resume();

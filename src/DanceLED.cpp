@@ -3,8 +3,6 @@
 #include <Thread.h>
 #include <ThreadController.h>
 
-#include "ChangerData.h"
-
 #include "Remote.h"
 #include "MusicData.h"
 #include "PushThrough.h"
@@ -28,6 +26,10 @@
 
 // Settings for IR remote signal
 const int IR_SIGNAL_PIN = 7;
+
+#define NUM_CHANGERS 2
+Changer* changers[NUM_CHANGERS];
+Changer* CUR_CHANGER;
 
 // Pins for reading raw analog audio
 #define LEFT_RAW_AUDIO_PIN A3
@@ -171,6 +173,8 @@ void setup()
   changers[0] = new StaticChanger(leds, PAL_MAGMA, 100);
   changers[1] = new StaticChanger(leds, PAL_FOREST, 100);
 
+  CUR_CHANGER = changers[0];
+
   // Init IR remote
   remote = Remote(IR_SIGNAL_PIN, NUM_CHANGERS);
   remote.addRemotePair(ERemoteButton::ZERO, changers[0]);
@@ -204,38 +208,35 @@ int getCurrentEpoch()
 
 void startNewEpoch()
 {
-  remote.getCurrentChanger()->stop();
+  CUR_CHANGER->stop();
 
   currentChangerIndex = random(NUM_CHANGERS);
   currentPaletteIndex = random(NUM_PALETTES);
 
-  // CUR_CHANGER = changers[currentChangerIndex];
-  // CUR_CHANGER->setPalette(palettes[currentPaletteIndex]);
+  CUR_CHANGER = changers[currentChangerIndex];
+  CUR_CHANGER->setPalette(palettes[currentPaletteIndex]);
 
-  // CUR_CHANGER->init();
+  CUR_CHANGER->init();
 }
 
 void setLeds()
 {
-  if(remote.getCurrentChanger())
-  {
     data->update();
-    // if (data->strongBeat)
-    // {
-    //   startNewEpoch();
-    // }
-    // else if (data->weakBeat)
-    // {
-    //   CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
-    // }
+    if (data->strongBeat)
+    {
+      startNewEpoch();
+    }
+    else if (data->weakBeat)
+    {
+      CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
+    }
 
-    Serial.print("Changer Ptr: ");
-    Serial.println((unsigned long)remote.getCurrentChanger(), HEX);
-    remote.getCurrentChanger()->step();
+    // Serial.print("Changer Ptr: ");
+    // Serial.println((unsigned long) CUR_CHANGER, HEX);
+    CUR_CHANGER->step();
 
     FastLED.show();
   }
-}
 
 void loop()
 {
