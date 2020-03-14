@@ -10,7 +10,7 @@ MusicData* MusicData::instance()
     if (!m_instance)
     {
         m_instance = new MusicData;
-        Serial.println("MusicData instance created.");
+        //Serial.println("MusicData instance created.");
     }
 
     return m_instance;

@@ -1,9 +1,14 @@
 #include <FastLED.h>
-#include <fix_fft.h>
+#include <IRremote.h>
+#include <Thread.h>
+#include <ThreadController.h>
 
-#include "IRremote.h"
+#include "ChangerData.h"
+
+#include "Remote.h"
 #include "MusicData.h"
 #include "PushThrough.h"
+#include "StaticChanger.h"
 #include "Changer.h"
 #include "SimplePulse.h"
 #include "MixBar.h"
@@ -22,8 +27,7 @@
 // This code uses the Sparkfun Spectrum Shield
 
 // Settings for IR remote signal
-#define IR_SIGNAL_PIN 7
-#define IR_REMOTE_ENABLED 1
+const int IR_SIGNAL_PIN = 7;
 
 // Pins for reading raw analog audio
 #define LEFT_RAW_AUDIO_PIN A3
@@ -135,6 +139,9 @@ CRGBPalette16 palettes[NUM_PALETTES];
 MusicData* data = MusicData::instance();
 MusicFrame testFrame = MusicFrame(0);
 
+// Init remote
+Remote remote = Remote(IR_SIGNAL_PIN, NUM_CHANGERS);
+
 // Current tick
 long tick = 0;
 
@@ -142,16 +149,11 @@ long tick = 0;
 #define TICKS_PER_EPOCH 500
 
 // Track epochs and preallocate random selectors.
-int currentChanger;
-int currentPalette;
-
-// Preinit changer array
-#define NUM_CHANGERS 2
-Changer* changers[NUM_CHANGERS];
+int currentChangerIndex;
+int currentPaletteIndex;
 
 void setup()
 {
-  
   // LED LIGHTING SETUP
   delay( 3000 ); // power-up safety delay
   FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
@@ -162,14 +164,17 @@ void setup()
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
 
-
   // CREATE CHANGER COLLECTION
   //changers[0] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
   //changers[1] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
   //changers[2] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
-  changers[0] = new SplitLine<1,6>(leds);
-  changers[1] = new SplitLine<1,6>(leds);
-  
+  changers[0] = new StaticChanger(leds, PAL_MAGMA, 100);
+  changers[1] = new StaticChanger(leds, PAL_FOREST, 100);
+
+  // Init IR remote
+  remote = Remote(IR_SIGNAL_PIN, NUM_CHANGERS);
+  remote.addRemotePair(ERemoteButton::ZERO, changers[0]);
+  remote.addRemotePair(ERemoteButton::ONE, changers[1]);
 
   // CREATE PALETTE COLLECTION
   palettes[0] = PAL_BEACHY;
@@ -199,44 +204,43 @@ int getCurrentEpoch()
 
 void startNewEpoch()
 {
+  remote.getCurrentChanger()->stop();
 
-  changers[currentChanger]->stop();
+  currentChangerIndex = random(NUM_CHANGERS);
+  currentPaletteIndex = random(NUM_PALETTES);
 
-  currentChanger = random(NUM_CHANGERS);
-  currentPalette = random(NUM_PALETTES);
+  // CUR_CHANGER = changers[currentChangerIndex];
+  // CUR_CHANGER->setPalette(palettes[currentPaletteIndex]);
 
-//  Serial.println("\nEPOCH:");
-//
-//  Serial.print("Changer:\t");
-//  Serial.println(currentChanger);
-//
-//  Serial.print("Palette:\t");
-//  Serial.println(currentPalette);
+  // CUR_CHANGER->init();
+}
 
-    Serial.print(millis());
-    Serial.print(',');
-    Serial.print(data->ticks);
-    Serial.print(',');
-    Serial.println(currentChanger);
+void setLeds()
+{
+  if(remote.getCurrentChanger())
+  {
+    data->update();
+    // if (data->strongBeat)
+    // {
+    //   startNewEpoch();
+    // }
+    // else if (data->weakBeat)
+    // {
+    //   CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
+    // }
 
-  changers[currentChanger]->init();
+    Serial.print("Changer Ptr: ");
+    Serial.println((unsigned long)remote.getCurrentChanger(), HEX);
+    remote.getCurrentChanger()->step();
+
+    FastLED.show();
+  }
 }
 
 void loop()
-{  
-  // Update channel info
-  data->update();
+{
+  // Get IR results, if any
+  remote.pingResutls();
 
-  if (data->strongBeat)
-  {
-    startNewEpoch();
-  }
-  else if (data->weakBeat)
-  {
-    changers[currentChanger]->setPalette(palettes[random(NUM_PALETTES)]);
-  }
-
-  changers[currentChanger]->step();
-
-  FastLED.show();
+  setLeds();
 }

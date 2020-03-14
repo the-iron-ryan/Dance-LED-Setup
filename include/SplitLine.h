@@ -111,6 +111,7 @@ public:
      */
     virtual void init() {}
 
+    virtual void stop() {}
 
 private:
 
