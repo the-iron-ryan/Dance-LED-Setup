@@ -32,16 +32,51 @@ enum ERemoteButton
     REP       =  0xFFFFFFFF 
 };
 
+enum EPairType
+{
+    NONE,
+    CHANGER,
+    FUNCTION
+};
+
 struct RemotePair
 {
-    RemotePair() : button(ERemoteButton::REP), changer(nullptr) {}
+    RemotePair() : button(ERemoteButton::REP) {}
 
-
-    RemotePair(ERemoteButton button, Changer* changer) : button(button), changer(changer) {}
+    RemotePair(ERemoteButton button) : button(button) 
+    {
+        pairType = NONE;
+    }
+    virtual ~RemotePair() {}
 
     ERemoteButton button;
+    EPairType pairType;
+
+
     Changer *changer;
+    void (*func) (void);
 };
+
+struct ChangerRemotePair : public RemotePair
+{
+    ChangerRemotePair(ERemoteButton button, Changer* changer) : RemotePair(button)//, changer(changer) 
+    {
+        pairType = EPairType::CHANGER;
+        this->changer = changer;
+    }
+
+};
+
+struct FunctionalRemotePair : public RemotePair
+{
+    FunctionalRemotePair(ERemoteButton button, void(*func)(void) ) : RemotePair(button)
+    {
+        pairType = EPairType::FUNCTION;
+        this->func = func;
+    }
+
+};
+
 
 /*
  * Remote - Binds actions to a IR remote
@@ -54,8 +89,9 @@ public:
     ~Remote();
 
     void addRemotePair(ERemoteButton button, Changer* changer);
+    void addRemotePair(ERemoteButton button, void(*func)(void));
 
-    Changer* getChanger(ERemoteButton button);
+    RemotePair getRemotePair(ERemoteButton button);
 
     void pingResutls();
 

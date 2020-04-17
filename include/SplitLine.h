@@ -17,7 +17,7 @@
                     1.0, \
                     1.33, \
                     1.66, \
-                    2.5 
+                    2.35 
 #define N_FUNC() (B - A + 1)
 #define N N_FUNC()
 
@@ -79,6 +79,13 @@ public:
             intensity *= TOTAL_AMP;
             intensity *= channelAmps[lineIndex + A];
             intensisties[lineIndex] = intensity;
+            
+
+            // if(lineIndex == N-1)
+            // {
+            //     Serial.print("Cur last thresh: ");
+            //     Serial.println(thresholds[lineIndex]);
+            // }
         }
 
 
@@ -109,9 +116,17 @@ public:
     /**
      * Called before the changer is activated.
      */
-    virtual void init() {}
+    virtual void init() 
+    {
+        // Clear out leds on init
+        leds.fill_solid(CRGB::Black);
+    }
 
-    virtual void stop() {}
+    virtual void stop() 
+    {
+        // Clear out leds on stop
+        leds.fill_solid(CRGB::Black);
+    }
 
 private:
 

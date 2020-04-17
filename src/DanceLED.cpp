@@ -3,6 +3,7 @@
 #include <Thread.h>
 #include <ThreadController.h>
 
+#include "DelegateChanger.h"
 #include "Palettes.h"
 #include "Remote.h"
 #include "MusicData.h"
@@ -28,7 +29,7 @@
 // Settings for IR remote signal
 const int IR_SIGNAL_PIN = 7;
 
-#define NUM_CHANGERS 4
+#define NUM_CHANGERS 5
 Changer* changers[NUM_CHANGERS];
 Changer* CUR_CHANGER;
 
@@ -45,16 +46,14 @@ Changer* CUR_CHANGER;
 CRGB realleds[NUM_LEDS];
 CRGBSet leds(realleds, NUM_LEDS);
 
-// Create paletee array
-#define NUM_PALETTES 5
-CRGBPalette16 palettes[NUM_PALETTES];
+
 
 // AUDIO INPUT SETUP
 MusicData* data = MusicData::instance();
 MusicFrame testFrame = MusicFrame(0);
 
 // Init remote
-Remote remote = Remote(IR_SIGNAL_PIN, NUM_CHANGERS);
+Remote remote = Remote(IR_SIGNAL_PIN, 10);
 
 // Current tick
 long tick = 0;
@@ -65,6 +64,19 @@ long tick = 0;
 // Track epochs and preallocate random selectors.
 int currentChangerIndex;
 int currentPaletteIndex;
+
+void setBrightnessUp()
+{
+  uint8_t curBrightness = constrain(FastLED.getBrightness() + 50, 0, 255);
+  FastLED.setBrightness(curBrightness);
+  FastLED.show();
+}
+void setBrightnessDown()
+{
+  uint8_t curBrightness = constrain(FastLED.getBrightness() - 50, 0, 255);
+  FastLED.setBrightness(curBrightness);
+  FastLED.show();
+}
 
 void setup()
 {
@@ -78,6 +90,8 @@ void setup()
     leds[i] = CRGB(0, 0, 0);
   FastLED.show();
 
+  initPalettes();
+
   // CREATE CHANGER COLLECTION
   //changers[0] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
   //changers[1] = new SplitSpiral<1, 6>  (leds(0, NUM_LEDS));
@@ -86,23 +100,22 @@ void setup()
   changers[1] = new StaticChanger(leds(0, NUM_LEDS), CRGB::Blue);
   changers[2] = new StaticChanger(leds(0, NUM_LEDS), CRGB::Green);
   changers[3] = new SplitLine<1, 6>(leds(0, NUM_LEDS));
+  changers[4] = new PushThrough(leds(0, NUM_LEDS), PAL_REVRAINBOW);
 
   // Default to changer 0
   CUR_CHANGER = changers[2];
 
   // Init IR remote
-  remote = Remote(IR_SIGNAL_PIN, NUM_CHANGERS);
+  remote = Remote(IR_SIGNAL_PIN, 10);
   remote.addRemotePair(ERemoteButton::ZERO, changers[0]);
   remote.addRemotePair(ERemoteButton::ONE, changers[1]);
   remote.addRemotePair(ERemoteButton::TWO, changers[2]);
   remote.addRemotePair(ERemoteButton::THREE, changers[3]);
+  remote.addRemotePair(ERemoteButton::FOUR, changers[4]);
+  remote.addRemotePair(ERemoteButton::UP, setBrightnessUp);
+  remote.addRemotePair(ERemoteButton::DOWN, setBrightnessDown);
 
-  // CREATE PALETTE COLLECTION
-  palettes[0] = PAL_BEACHY;
-  palettes[1] = PAL_REVRAINBOW;
-  palettes[2] = PAL_FOREST;
-  palettes[3] = PAL_MAGMA;
-  palettes[4] = PAL_HALLOWEEN_GHOUL;
+
 
   // SERIAL AND INPUT SETUP
   Serial.begin(9600);
@@ -141,11 +154,11 @@ void setLeds()
     data->update();
     if (data->strongBeat)
     {
-      // startNewEpoch();
+      CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
     }
     else if (data->weakBeat)
     {
-      // CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
+      CUR_CHANGER->setPalette(palettes[random(NUM_PALETTES)]);
     }
 
     // Serial.print("Changer Ptr: ");

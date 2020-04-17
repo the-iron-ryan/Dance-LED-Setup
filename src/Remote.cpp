@@ -29,22 +29,29 @@ Remote::~Remote()
 void Remote::addRemotePair(ERemoteButton button, Changer* changer)
 {
     if(curPairIndex < totNumRemotePairs)
-        pairDict[curPairIndex++] = RemotePair(button, changer);
+        pairDict[curPairIndex++] = ChangerRemotePair(button, changer);
 }
 
-Changer* Remote::getChanger(ERemoteButton button)
+void Remote::addRemotePair(ERemoteButton button, void(*func)(void))
 {
-    Changer* changerPtr = nullptr;
+    if(curPairIndex < totNumRemotePairs)
+        pairDict[curPairIndex++] = FunctionalRemotePair(button, func);
+}
+
+RemotePair Remote::getRemotePair(ERemoteButton button)
+{
+    RemotePair pair;
     for(int i = 0; i < curPairIndex; i++)
     {
         if(pairDict[i].button == button)
         {
-            changerPtr = pairDict[i].changer;
+            Serial.println("Got remote pair!");
+            pair = pairDict[i];
             break;
         }
     }
 
-    return changerPtr;
+    return pair;
 }
 
 void Remote::pingResutls()
@@ -66,14 +73,35 @@ void Remote::pingResutls()
                     curTime = millis();
 
                     ERemoteButton button = getResultButton();
-                    if (getChanger(button))
+                    RemotePair curPair = getRemotePair(button);
+
+                    Serial.print("Pair type: ");
+                    Serial.println((unsigned long)curPair.pairType);
+
+                    if (curPair.pairType == EPairType::CHANGER)
                     {
-                        CUR_CHANGER->stop();
-                        CUR_CHANGER = getChanger(button);
-                        CUR_CHANGER->init();
-                        Serial.print("New Changer: ");
-                        Serial.println((unsigned long) CUR_CHANGER, HEX);
-                        break;
+                        Serial.print("Our Changer: ");
+                        Serial.println((unsigned long)((ChangerRemotePair *)&curPair)->changer, HEX);
+                        if (Changer *pairChanger = ((ChangerRemotePair *)&curPair)->changer)
+                        {
+                            CUR_CHANGER->stop();
+                            CUR_CHANGER = pairChanger;
+                            CUR_CHANGER->init();
+                            Serial.print("New Changer: ");
+                            Serial.println((unsigned long)CUR_CHANGER, HEX);
+                            break;
+                        }
+                    }
+                    else if (curPair.pairType == EPairType::FUNCTION)
+                    {
+                        if (FunctionalRemotePair *pairFunc = ((FunctionalRemotePair *)&curPair))
+                        {
+                            if (pairFunc->func)
+                            {
+                                Serial.print("Calling func...");
+                                pairFunc->func();
+                            }
+                        }
                     }
                 }
                 IRReceiver->resume();

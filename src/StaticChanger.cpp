@@ -1,7 +1,7 @@
 #include "StaticChanger.h"
 
 StaticChanger::StaticChanger(CRGBSet _leds, CRGB _color) :
-    Changer(_leds, CRGBPalette16())
+    Changer(_leds)
 {
     bUsesPalette = false;
     curSolidColor = _color;

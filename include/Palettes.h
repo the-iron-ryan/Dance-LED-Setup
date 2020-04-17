@@ -92,4 +92,21 @@ DEFINE_GRADIENT_PALETTE ( PAL_BEACHY )
   255,  0,    90,   255,    // Blue, but Different!
 };
 
+// Create paletee array
+#define NUM_PALETTES 5
+CRGBPalette16 palettes[NUM_PALETTES];
+
+// CRGBPalette16 warmPalettes[NUM_PALETTES];
+// CRGBPalette16 coolPalettes[NUM_PALETTES];
+
+// CREATE PALETTE COLLECTION
+void initPalettes()
+{
+    palettes[0] = PAL_BEACHY;
+    palettes[1] = PAL_REVRAINBOW;
+    palettes[2] = PAL_FOREST;
+    palettes[3] = PAL_MAGMA;
+    palettes[4] = PAL_HALLOWEEN_GHOUL;
+}
+
 #endif
